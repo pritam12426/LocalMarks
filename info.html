@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Bookmark Statistics</title>
+
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			padding: 30px;
+			background: #111827;
+			color: white;
+			font-family: system-ui, sans-serif;
+		}
+
+		h1 {
+			text-align: center;
+			margin-bottom: 10px;
+		}
+
+		.summary {
+			text-align: center;
+			color: #9ca3af;
+			margin-bottom: 40px;
+		}
+
+		.domains-grid {
+			display: grid;
+			grid-template-columns: repeat(
+				auto-fill,
+				minmax(280px, 1fr)
+			);
+			gap: 20px;
+		}
+
+		.domain-card {
+			background: #1f2937;
+			border-radius: 12px;
+			padding: 18px;
+			transition: transform 0.2s;
+			border: 1px solid #374151;
+		}
+
+		.domain-card:hover {
+			transform: translateY(-4px);
+		}
+
+		.domain-header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			margin-bottom: 12px;
+		}
+
+		.domain-header img {
+			width: 32px;
+			height: 32px;
+			border-radius: 6px;
+		}
+
+		.domain-name {
+			font-size: 1.1rem;
+			font-weight: bold;
+			word-break: break-word;
+		}
+
+		.domain-count {
+			font-size: 2rem;
+			color: #38bdf8;
+			font-weight: bold;
+		}
+
+		.domain-label {
+			color: #9ca3af;
+		}
+
+		.back-btn {
+			display: inline-block;
+			margin-bottom: 30px;
+			text-decoration: none;
+			color: white;
+			background: #2563eb;
+			padding: 10px 16px;
+			border-radius: 8px;
+		}
+
+		.back-btn:hover {
+			background: #1d4ed8;
+		}
+
+		.loading {
+			text-align: center;
+			margin-top: 100px;
+		}
+	</style>
+</head>
+<body>
+
+	<a class="back-btn" href="index.html">
+		← Back to Bookmarks
+	</a>
+
+	<h1>🌐 Domain Statistics</h1>
+
+	<div class="summary" id="summary">
+		Loading...
+	</div>
+
+	<div class="domains-grid" id="domains-grid">
+		<div class="loading">
+			Loading domain information...
+		</div>
+	</div>
+
+	<script src="javascript/info.js"></script>
+
+</body>
+</html>

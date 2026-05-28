@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Title -->
+    <title>Local Marks</title>
+    <meta name="description" content="Personal local bookmarks manager with beautiful dark UI">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <!--<link rel="apple-touch-icon" href="apple-touch-icon.png">-->
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="stylesheet/style.css">
+
+    <!-- Theme Color (for mobile browsers) -->
+    <meta name="theme-color" content="#0f0f0f">
+    <meta name="msapplication-TileColor" content="#0f0f0f">
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:title" content="Fevicol • My Bookmarks">
+    <meta property="og:description" content="My personal bookmark collection">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/fevicol/preview.png">
+
+    <!-- Prevent indexing (since it's a local project) -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Performance & Preloading -->
+    <link rel="preload" href="bookmarks.json" as="fetch" crossorigin>
+
+    <!-- Optional: Make it feel more like an app -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+	<div class="top-header">
+		<a href="info.html">
+			<!-- After clicking on this image, it should open the info page aka domains page of json -->
+			<img src="favicon.ico" alt="Info">
+		</a>
+
+		<h1>Local Marks</h1>
+	</div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="🔍 Search bookmarks... (title, description, tags, url) cmd/ctrl + k" autocomplete="off">
+        <button id="clear-search" class="clear-btn">✕</button>
+    </div>
+
+    <div id="bookmarks-container"></div>
+
+    <script src="javascript/script.js"></script>
+</body>
+</html>
