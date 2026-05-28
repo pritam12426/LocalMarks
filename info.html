@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>LocalMarks — Info</title>
+	<link rel="icon" href="favicon.ico">
+	<link rel="stylesheet" href="stylesheet/style.css">
+</head>
+<body>
+
+	<!-- ── TOP HEADER ── -->
+	<header class="top-header">
+		<div class="header-inner">
+			<div class="header-left">
+				<a href="index.html" class="logo-link" title="Back to bookmarks">
+					<span class="logo-emoji">📚</span>
+				</a>
+				<h1>Database Info</h1>
+			</div>
+			<div class="header-right">
+				<a href="index.html" class="info-btn">← Back</a>
+			</div>
+		</div>
+	</header>
+
+	<!-- ── INFO BODY ── -->
+	<div class="info-body">
+
+		<!-- Summary stats strip -->
+		<div class="stats-strip" id="stats-strip">
+			<div class="stat-card">
+				<div class="stat-num" id="stat-total">—</div>
+				<div class="stat-label">Total Bookmarks</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-num" id="stat-unique">—</div>
+				<div class="stat-label">Unique URLs</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-num" id="stat-cats">—</div>
+				<div class="stat-label">Categories</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-num" id="stat-domains">—</div>
+				<div class="stat-label">Unique Domains</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-num" id="stat-tags">—</div>
+				<div class="stat-label">Unique Tags</div>
+			</div>
+		</div>
+
+		<div class="info-grid">
+
+			<!-- Category breakdown -->
+			<section class="info-section">
+				<h2 class="section-title">By Category</h2>
+				<div id="cat-breakdown"></div>
+			</section>
+
+			<!-- Top tags -->
+			<section class="info-section">
+				<h2 class="section-title">Top Tags</h2>
+				<div id="tag-breakdown"></div>
+			</section>
+
+		</div>
+
+		<!-- Domain table -->
+		<section class="info-section full-width">
+			<h2 class="section-title">Domains <span id="domain-count-label" class="section-count"></span></h2>
+			<div class="domain-grid" id="domain-grid"></div>
+		</section>
+
+	</div>
+
+	<script src="javascript/info.js"></script>
+</body>
+</html>

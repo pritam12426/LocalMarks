@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>LocalMarks</title>
+	<link rel="icon" href="favicon.ico">
+	<link rel="stylesheet" href="stylesheet/style.css">
+</head>
+<body>
+	<!-- ── TOP HEADER ── -->
+	<header class="top-header">
+		<div class="header-inner">
+			<div class="header-left">
+				<a href="info.html" class="logo-link" title="Database info">
+					<img src="favicon.ico" alt="Description of the image" width="50">
+					<!--<span class="logo-emoji">📚</span>-->
+				</a>
+				<h1 id="header-title">LocalMarks</h1>
+			</div>
+			<div class="header-right">
+				<a href="info.html" class="info-btn">📊 Info</a>
+			</div>
+		</div>
+
+		<!-- Search -->
+		<div class="search-wrap">
+			<span class="search-icon">🔍</span>
+			<input
+				type="text"
+				id="search-input"
+				placeholder="Search bookmarks… (title, description, tags, url)	 Ctrl + K"
+				autocomplete="off"
+				spellcheck="false"
+			>
+			<button id="clear-search" class="clear-btn" title="Clear search">✕</button>
+		</div>
+	</header>
+
+	<!-- ── BODY ── -->
+	<div class="page-body">
+
+		<!-- Sidebar -->
+		<aside class="sidebar" id="sidebar">
+			<div class="sidebar-heading">
+				<span>📂</span>
+				<span>Categories</span>
+				<span class="sidebar-count" id="sidebar-count"></span>
+			</div>
+			<ul class="category-list" id="category-list"></ul>
+		</aside>
+
+		<!-- Main panel -->
+		<main class="main-panel" id="main-panel">
+
+			<!-- Panel header (title + tag filter) -->
+			<div class="panel-top" id="panel-top">
+				<div class="panel-title" id="panel-title">Loading…</div>
+				<div class="tag-bar" id="tag-bar"></div>
+			</div>
+
+			<!-- Bookmark cards -->
+			<div class="bookmark-list" id="bookmark-list"></div>
+		</main>
+
+	</div>
+
+	<script src="javascript/script.js"></script>
+</body>
+</html>
