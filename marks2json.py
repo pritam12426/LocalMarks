@@ -38,6 +38,8 @@ def parse_bookmark_line(line: str):
 	description = ""
 	tags = []
 
+
+
 	for part in parts:
 		if part.startswith(("http://", "https://")):
 			url = part
@@ -50,6 +52,14 @@ def parse_bookmark_line(line: str):
 
 	if not url:
 		return None
+
+	# Track unique tags for hash
+	for tag in tags:
+		if tag not in seen_tags:
+			seen_tags.add(tag)
+			tag_counter[tag] = 1  # Start counter at 0
+		else:
+			tag_counter[tag] += 1
 
 	return {
 		"title": title,
@@ -75,6 +85,9 @@ print(f"📂 Reading from: {args.inputdir}")
 book_marks = []
 domain_counter = {}  # domain -> counter
 seen_domains = set()
+
+tag_counter = {}  # tag -> counter
+seen_tags = set()
 
 print("📖 Scanning .txt files...")
 
@@ -110,9 +123,10 @@ for file_path in txt_files:
 
 # New structure: list containing one dictionary (domain: counter)
 book_mark_domain_hash = [domain_counter]
+book_mark_tag_hash    = [tag_counter]
 
 # Final data structure
-final_data = {"book_Marks": book_marks, "book_mark_domain_hash": book_mark_domain_hash}
+final_data = {"book_Marks": book_marks, "book_mark_domain_hash": book_mark_domain_hash, "book_mark_tag_hash": book_mark_tag_hash}
 
 output_file = args.outputdir / "bookmarks.json"
 
@@ -123,4 +137,5 @@ print("\n✅ SUCCESS! Bookmarks have been updated")
 print(f"📊 Total Categories: {len(book_marks)}")
 print(f"📈 Total Bookmarks: {sum(len(cat['bookmarks']) for cat in book_marks)}")
 print(f"🔢 Unique Domains in hash: {len(domain_counter)}")
+print(f"🔢 Unique tags in hash: {len(tag_counter)}")
 print(f"💾 Saved to: {output_file}")
