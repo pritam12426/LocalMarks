@@ -229,7 +229,7 @@ function buildCard(bm, { tagClickable = false } = {}) {
 	a.rel       = 'noopener noreferrer';
 
 	const domain       = bm.domain;
-	const displayTitle = bm.title || domain || bm.url || bm.description;
+	const displayTitle = bm.title || bm.url || bm.description || domain;
 	const faviconSrc   = bm.icon || `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 	// Fallback chain: bm.icon → google favicon → hidden
 	const fallbackSrc  = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;

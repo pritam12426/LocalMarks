@@ -1,31 +1,8 @@
-# =========================
-#        TODO LIST
-# =========================
+Add theme selected @CSS +JS
+Add new theme hacker line @CSS
+Ship this project with its owm static http server @own-server +js
+fix the UI: the tags counter shold how only fist 18 tags then a foldable button in which others are hidden, and when it is folded, it should show the number of tag are there
+Make database, json dynamic from other director is also @own-server like "$ bk-server ~/.local/share/bk/some.js"
 
-# Syntax (examples):
-# (A) Call mom @phone +Family
-# x 2025-11-27 Pay electricity bill +Bills
-# Buy groceries @market +Home
-# Finish assignment due:2025-12-01 +College
 
-# =========================
-#        TASKS
-# =========================
-
-(A) Complete project report due:2025-12-15 +Projects
-(B) Buy groceries @market +Home
-(C) Book train tickets +Travel
-Pay internet bill +Bills
-Clean desk @home +Home
-Learn C++ templates +Learning
-
-# =========================
-#       SOMEDAY/MAYBE
-# =========================
-Research gaming PC build +Hobby
-Learn guitar +Learning
-
-# =========================
-#       COMPLETED
-# =========================
-x 2025-11-01 Install VSCode +Setup
+marks2json.py

@@ -22,14 +22,12 @@ def get_channel_icon_url(channel_url: str) -> str | None:
 	response = requests.get(channel_url, headers=headers, timeout=5)
 	html = response.text
 
-	# YouTube injects initial data as a JS variable
 	match = re.search(r"ytInitialData\s*=\s*(\{.*?\});</script>", html, re.DOTALL)
 	if not match:
 		raise ValueError("Could not find ytInitialData in page")
 
 	data = json.loads(match.group(1))
 
-	# Navigate the nested structure to the avatar/icon
 	avatar = (
 		data["header"]
 		["pageHeaderRenderer"]
@@ -43,37 +41,37 @@ def get_channel_icon_url(channel_url: str) -> str | None:
 		["sources"]
 	)
 
-	# Pick the highest-res source
-	icon_url = avatar[-1]["url"]
-	return icon_url
+	return avatar[-1]["url"]
 
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def format_category_name(filename: str) -> str:
-	"""Format filename to nice category name."""
-	name = Path(filename).stem
-	name = name.replace("_", " ")
-	name = " ".join(word.capitalize() for word in name.split())
-	return name
+	"""Format a filename stem into a readable category name."""
+	name = Path(filename).stem.replace("_", " ")
+	return " ".join(word.capitalize() for word in name.split())
 
 
 def get_domain(url: str) -> str:
-	"""Extract clean domain from URL."""
+	"""Extract the bare domain from a URL."""
 	try:
-		parsed = urlparse(url)
-		domain = parsed.hostname
-		if domain and domain.startswith("www."):
-			domain = domain[4:]
-		return domain.lower()
+		host = urlparse(url).hostname or ""
+		return host.removeprefix("www.").lower()
 	except Exception:
 		return ""
 
 
-def parse_bookmark_line(line: str):
-	"""Parse a single bookmark line."""
+# ── Parsing ────────────────────────────────────────────────────────────────────
+def parse_bookmark_line(
+	line: str,
+	fetch_icons: bool,
+	domain_counter: dict[str, int],
+	tag_counter: dict[str, int],
+) -> dict | None:
+	"""Parse one pipe-separated bookmark line. Returns None if the line should be skipped."""
 	if not line or line.strip().startswith("#"):
 		return None
 
-	if not ("http://" in line or "https://" in line):
+	if "http://" not in line and "https://" not in line:
 		return None
 
 	parts = [x.strip() for x in line.strip().split("|") if x.strip()]
@@ -81,16 +79,20 @@ def parse_bookmark_line(line: str):
 	if len(parts) > 4:
 		return None
 
-	title = ""
-	url = ""
+	title       = ""
+	url         = ""
 	description = ""
-	tags = []
+	tags: list[str] = []
 
 	for part in parts:
 		if part.startswith(("http://", "https://")):
 			url = part
 		elif part.startswith("#"):
-			tags.extend(tag.replace("#", "").strip() for tag in part.split() if tag.startswith("#") and tag.replace("#", "").strip())
+			tags.extend(
+				t.removeprefix("#").strip()
+				for t in part.split()
+				if t.startswith("#") and t.removeprefix("#").strip()
+			)
 		elif not title:
 			title = part
 		elif not description:
@@ -99,98 +101,228 @@ def parse_bookmark_line(line: str):
 	if not url:
 		return None
 
-	# Track unique tags for hash
+	# Update tag counters
 	for tag in tags:
-		if tag not in seen_tags:
-			seen_tags.add(tag)
-			tag_counter[tag] = 1  # Start counter at 0
-		else:
-			tag_counter[tag] += 1
+		tag_counter[tag] = tag_counter.get(tag, 0) + 1
 
-	domain: str = get_domain(url)
+	# Update domain counters
+	domain = get_domain(url)
+	if domain:
+		domain_counter[domain] = domain_counter.get(domain, 0) + 1
+
 	entry: dict = {
-		"title": title,
-		"url": url,
+		"title":       title,
+		"url":         url,
 		"description": description,
-		"tags": tags,
-		"domain": domain,
+		"tags":        tags,
+		"domain":      domain,
 	}
 
-	if (url.startswith("https://www.youtube.com/@")):
-		print(f"     🛜 Requesting Youtube channel's logo URL '{url}'")
-		icon_url: str | None = get_channel_icon_url(url)
-		if icon_url is not None:
-			entry |= {
-				"icon": icon_url,
-			}
+	if fetch_icons and url.startswith("https://www.youtube.com/@"):
+		print(f"     🛜  Fetching icon for '{url}'")
+		try:
+			icon_url = get_channel_icon_url(url)
+			if icon_url:
+				entry["icon"] = icon_url
+		except Exception as exc:
+			print(f"     ⚠️  Could not fetch icon: {exc}")
 
 	return entry
 
 
-parser = argparse.ArgumentParser(prog="dotmason", description="Convert bookmark .txt files to JSON database")
-parser.add_argument("inputdir", type=Path, help="Input directory containing .txt bookmark files")
-parser.add_argument("outputdir", type=Path, help="Output directory where bookmarks.json will be saved")
-args = parser.parse_args()
+def process_files(
+	files: list[Path],
+	fetch_icons: bool,
+	domain_counter: dict[str, int],
+	tag_counter: dict[str, int],
+) -> list[dict]:
+	"""Read a list of .txt files and return a list of category dicts."""
+	categories: list[dict] = []
 
-if not args.inputdir.is_dir():
-	parser.error(f"Input directory does not exist: {args.inputdir}")
-
-args.outputdir.mkdir(parents=True, exist_ok=True)
-
-print("🚀 Starting Bookmark Generator...")
-print(f"📂 Reading from: {args.inputdir}")
-
-book_marks = []
-domain_counter = {}  # domain -> counter
-seen_domains = set()
-
-tag_counter = {}  # tag -> counter
-seen_tags = set()
-
-print("📖 Scanning .txt files...")
-
-txt_files = sorted(args.inputdir.glob("*.txt"))
-
-for file_path in txt_files:
-	category_name = format_category_name(file_path.name)
-
-	with file_path.open("r", encoding="utf-8") as f:
-		lines = f.readlines()
-
-	bookmarks = []
-
-	for line in lines:
-		bookmark = parse_bookmark_line(line)
-		if not bookmark:
+	for file_path in sorted(files):
+		if not file_path.exists():
+			print(f"   ⚠️  File not found, skipping: {file_path}")
 			continue
 
-		bookmarks.append(bookmark)
+		category_name = format_category_name(file_path.name)
+		bookmarks: list[dict] = []
 
-		# Track unique domains for hash
-		domain = bookmark["domain"]
-		if domain and domain not in seen_domains:
-			seen_domains.add(domain)
-			domain_counter[domain] = 1  # Start counter at 0
+		for line in file_path.read_text(encoding="utf-8").splitlines():
+			bookmark = parse_bookmark_line(line, fetch_icons, domain_counter, tag_counter)
+			if bookmark:
+				bookmarks.append(bookmark)
+
+		if bookmarks:
+			categories.append({"category": category_name, "bookmarks": bookmarks})
+			print(f"   📄 {file_path.name}  ({len(bookmarks)} bookmarks)")
+
+	return categories
+
+
+def print_summary(book_marks: list[dict], domain_counter: dict, tag_counter: dict, output_file: Path) -> None:
+	total = sum(len(c["bookmarks"]) for c in book_marks)
+	print("\n✅  Done!")
+	print(f"   📊 Categories : {len(book_marks)}")
+	print(f"   📎 Bookmarks  : {total}")
+	print(f"   🌐 Domains    : {len(domain_counter)}")
+	print(f"   🏷️  Tags       : {len(tag_counter)}")
+	print(f"   💾 Saved to   : {output_file}")
+
+
+# ── Subcommands ────────────────────────────────────────────────────────────────
+
+def cmd_create(args: argparse.Namespace) -> None:
+	"""Build a fresh database from the given .txt files."""
+	output: Path = args.to
+	output.parent.mkdir(parents=True, exist_ok=True)
+
+	print("🚀 Creating bookmark database…")
+
+	domain_counter: dict[str, int] = {}
+	tag_counter:    dict[str, int] = {}
+
+	book_marks = process_files(args.files, args.icon, domain_counter, tag_counter)
+	shuffle(book_marks)
+
+	final_data = {
+		"book_Marks":            book_marks,
+		"book_mark_domain_hash": domain_counter,
+		"book_mark_tag_hash":    tag_counter,
+	}
+
+	output.write_text(json.dumps(final_data, indent="\t", ensure_ascii=False), encoding="utf-8")
+	print_summary(book_marks, domain_counter, tag_counter, output)
+
+
+def cmd_append(args: argparse.Namespace) -> None:
+	"""Append bookmarks from the given .txt files into an existing database."""
+	output: Path = args.to
+
+	if not output.exists():
+		raise SystemExit(f"❌ Database not found: {output}\n   Use 'create' to start a new one.")
+
+	print(f"📂 Loading existing database: {output}")
+	existing = json.loads(output.read_text(encoding="utf-8"))
+
+	book_marks:     list[dict]     = existing.get("book_Marks", [])
+	domain_counter: dict[str, int] = existing.get("book_mark_domain_hash", {})
+	tag_counter:    dict[str, int] = existing.get("book_mark_tag_hash", {})
+
+	# Build a set of already-known URLs so we don't add duplicates
+	known_urls: set[str] = {
+		bm["url"]
+		for cat in book_marks
+		for bm in cat.get("bookmarks", [])
+	}
+
+	print("📖 Scanning new files…")
+	new_categories = process_files(args.files, args.icon, domain_counter, tag_counter)
+
+	# Merge: if the category already exists add to it, otherwise append it
+	added_total = 0
+	for new_cat in new_categories:
+		new_bms = [bm for bm in new_cat["bookmarks"] if bm["url"] not in known_urls]
+		if not new_bms:
+			continue
+
+		added_total += len(new_bms)
+		known_urls.update(bm["url"] for bm in new_bms)
+
+		existing_cat = next(
+			(c for c in book_marks if c["category"] == new_cat["category"]),
+			None,
+		)
+		if existing_cat:
+			existing_cat["bookmarks"].extend(new_bms)
+			print(f"   ➕ {new_cat['category']}: added {len(new_bms)} bookmark(s)")
 		else:
-			domain_counter[domain] += 1
+			book_marks.append({"category": new_cat["category"], "bookmarks": new_bms})
+			print(f"   🆕 New category '{new_cat['category']}': {len(new_bms)} bookmark(s)")
 
-	if bookmarks:
-		book_marks.append({"category": category_name, "bookmarks": bookmarks})
-		print(f"   📄 Processing: {file_path.name} ({len(bookmarks)} bookmarks)")
+	if added_total == 0:
+		print("   ℹ️  No new bookmarks to add (all URLs already exist in the database).")
+		return
 
-shuffle(book_marks)
+	final_data = {
+		"book_Marks":            book_marks,
+		"book_mark_domain_hash": domain_counter,
+		"book_mark_tag_hash":    tag_counter,
+	}
 
-# Final data structure
-final_data = {"book_Marks": book_marks, "book_mark_domain_hash": domain_counter, "book_mark_tag_hash": tag_counter}
+	output.write_text(json.dumps(final_data, indent="\t", ensure_ascii=False), encoding="utf-8")
+	print_summary(book_marks, domain_counter, tag_counter, output)
 
-output_file = args.outputdir / "bookmarks.json"
 
-with output_file.open("w", encoding="utf-8") as f:
-	json.dump(final_data, f, indent="\t", ensure_ascii=False)
+# ── CLI ────────────────────────────────────────────────────────────────────────
 
-print("\n✅ SUCCESS! Bookmarks have been updated")
-print(f"📊 Total Categories: {len(book_marks)}")
-print(f"📈 Total Bookmarks: {sum(len(cat['bookmarks']) for cat in book_marks)}")
-print(f"🔢 Unique Domains in hash: {len(domain_counter)}")
-print(f"🔢 Unique tags in hash: {len(tag_counter)}")
-print(f"💾 Saved to: {output_file}")
+def build_parser() -> argparse.ArgumentParser:
+	parser = argparse.ArgumentParser(
+		prog="marks2json",
+		description="Convert bookmark .txt files into a JSON database",
+	)
+
+	subparsers = parser.add_subparsers(dest="command", required=True)
+
+	# ── create ──
+	create_parser = subparsers.add_parser(
+		"create",
+		help="Create a new bookmark database from .txt files",
+	)
+	create_parser.add_argument(
+		"files",
+		type=Path,
+		nargs="+",
+		metavar="FILE",
+		help="One or more .txt bookmark files",
+	)
+	create_parser.add_argument(
+		"-T", "--to",
+		type=Path,
+		default=Path("bookmarks.json"),
+		metavar="DB",
+		help="Output JSON file (default: bookmarks.json)",
+	)
+	create_parser.add_argument(
+		"-Y", "--icon",
+		action="store_true",
+		help="Fetch YouTube channel icons (requires network)",
+	)
+	create_parser.set_defaults(func=cmd_create)
+
+	# ── append ──
+	append_parser = subparsers.add_parser(
+		"append",
+		help="Append bookmarks from .txt files into an existing database",
+	)
+	append_parser.add_argument(
+		"files",
+		type=Path,
+		nargs="+",
+		metavar="FILE",
+		help="One or more .txt bookmark files",
+	)
+	append_parser.add_argument(
+		"-T", "--to",
+		type=Path,
+		required=True,
+		metavar="DB",
+		help="Path to the existing JSON database",
+	)
+	append_parser.add_argument(
+		"-Y", "--icon",
+		action="store_true",
+		help="Fetch YouTube channel icons (requires network)",
+	)
+	append_parser.set_defaults(func=cmd_append)
+
+	return parser
+
+
+def main() -> None:
+	parser = build_parser()
+	args   = parser.parse_args()
+	args.func(args)
+
+
+if __name__ == "__main__":
+	main()
