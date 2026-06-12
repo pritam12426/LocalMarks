@@ -52,7 +52,17 @@ async function loadData() {
 		buildSearchIndex();
 		updateHeaderCount();
 		renderSidebar();
-		renderPanel();
+
+		// If arriving from info.html with ?q=domain, pre-fill search
+		const urlParam = new URLSearchParams(window.location.search).get('q');
+		if (urlParam) {
+			elSearch.value = urlParam;
+			searchQuery = urlParam;
+			elClear.classList.add('visible');
+			renderSearch(searchQuery);
+		} else {
+			renderPanel();
+		}
 
 	} catch (err) {
 		console.error('❌ Failed to load bookmarks:', err);
@@ -213,18 +223,20 @@ function renderCards(bookmarks, container) {
 
 function buildCard(bm, { tagClickable = false } = {}) {
 	const a = document.createElement('a');
-	a.className	 = 'bookmark-card';
-	a.href       = bm.url;
-	a.target     = '_blank';
-	a.rel        = 'noopener noreferrer';
+	a.className = 'bookmark-card';
+	a.href      = bm.url;
+	a.target    = '_blank';
+	a.rel       = 'noopener noreferrer';
 
-	const domain       = getDomain(bm.url);
-	const displayTitle = bm.title || bm.description || domain || bm.url;
-	const faviconSrc   = faviconUrl(bm.url);
+	const domain       = bm.domain;
+	const displayTitle = bm.title || domain || bm.url || bm.description;
+	const faviconSrc   = bm.icon || `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+	// Fallback chain: bm.icon → google favicon → hidden
+	const fallbackSrc  = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 
 	a.innerHTML = `
-		<img class="bm-favicon" src="${esc(faviconSrc)}" alt="" loading="lazy"
-				 onerror="this.style.display='none'">
+		<img class="bm-favicon" src="${esc(faviconSrc)}" alt=""
+				 onerror="this.__retried ? this.style.display='none' : (this.__retried=true, this.src='${esc(fallbackSrc)}')">
 		<div class="bm-body">
 			<div class="bm-title">${esc(displayTitle)}</div>
 			${bm.description && bm.description !== displayTitle
@@ -351,19 +363,6 @@ function clearSearch() {
 // =============================================
 // UTILS
 // =============================================
-
-function getDomain(url) {
-	try {
-		const h = new URL(url).hostname;
-		return h.startsWith('www.') ? h.slice(4) : h;
-	} catch { return ''; }
-}
-
-function faviconUrl(url) {
-	try {
-		return `https://www.google.com/s2/favicons?sz=64&domain=${new URL(url).hostname}`;
-	} catch { return ''; }
-}
 
 function esc(str) {
 	return String(str ?? '')

@@ -2,12 +2,54 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
+from random import shuffle
 from urllib.parse import urlparse
+
+import requests
+
+
+def get_channel_icon_url(channel_url: str) -> str | None:
+	headers = {
+		"User-Agent": (
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+			"AppleWebKit/537.36 (KHTML, like Gecko) "
+			"Chrome/120.0.0.0 Safari/537.36"
+		),
+	}
+
+	response = requests.get(channel_url, headers=headers, timeout=5)
+	html = response.text
+
+	# YouTube injects initial data as a JS variable
+	match = re.search(r"ytInitialData\s*=\s*(\{.*?\});</script>", html, re.DOTALL)
+	if not match:
+		raise ValueError("Could not find ytInitialData in page")
+
+	data = json.loads(match.group(1))
+
+	# Navigate the nested structure to the avatar/icon
+	avatar = (
+		data["header"]
+		["pageHeaderRenderer"]
+		["content"]
+		["pageHeaderViewModel"]
+		["image"]
+		["decoratedAvatarViewModel"]
+		["avatar"]
+		["avatarViewModel"]
+		["image"]
+		["sources"]
+	)
+
+	# Pick the highest-res source
+	icon_url = avatar[-1]["url"]
+	return icon_url
 
 
 def format_category_name(filename: str) -> str:
-	"""Format filename to nice category name"""
+	"""Format filename to nice category name."""
 	name = Path(filename).stem
 	name = name.replace("_", " ")
 	name = " ".join(word.capitalize() for word in name.split())
@@ -15,7 +57,7 @@ def format_category_name(filename: str) -> str:
 
 
 def get_domain(url: str) -> str:
-	"""Extract clean domain from URL"""
+	"""Extract clean domain from URL."""
 	try:
 		parsed = urlparse(url)
 		domain = parsed.hostname
@@ -27,18 +69,22 @@ def get_domain(url: str) -> str:
 
 
 def parse_bookmark_line(line: str):
-	"""Parse a single bookmark line"""
+	"""Parse a single bookmark line."""
 	if not line or line.strip().startswith("#"):
 		return None
 
+	if not ("http://" in line or "https://" in line):
+		return None
+
 	parts = [x.strip() for x in line.strip().split("|") if x.strip()]
+
+	if len(parts) > 4:
+		return None
 
 	title = ""
 	url = ""
 	description = ""
 	tags = []
-
-
 
 	for part in parts:
 		if part.startswith(("http://", "https://")):
@@ -61,12 +107,24 @@ def parse_bookmark_line(line: str):
 		else:
 			tag_counter[tag] += 1
 
-	return {
+	domain: str = get_domain(url)
+	entry: dict = {
 		"title": title,
 		"url": url,
 		"description": description,
 		"tags": tags,
+		"domain": domain,
 	}
+
+	if (url.startswith("https://www.youtube.com/@")):
+		print(f"     🛜 Requesting Youtube channel's logo URL '{url}'")
+		icon_url: str | None = get_channel_icon_url(url)
+		if icon_url is not None:
+			entry |= {
+				"icon": icon_url,
+			}
+
+	return entry
 
 
 parser = argparse.ArgumentParser(prog="dotmason", description="Convert bookmark .txt files to JSON database")
@@ -109,7 +167,7 @@ for file_path in txt_files:
 		bookmarks.append(bookmark)
 
 		# Track unique domains for hash
-		domain = get_domain(bookmark["url"])
+		domain = bookmark["domain"]
 		if domain and domain not in seen_domains:
 			seen_domains.add(domain)
 			domain_counter[domain] = 1  # Start counter at 0
@@ -120,13 +178,10 @@ for file_path in txt_files:
 		book_marks.append({"category": category_name, "bookmarks": bookmarks})
 		print(f"   📄 Processing: {file_path.name} ({len(bookmarks)} bookmarks)")
 
-
-# New structure: list containing one dictionary (domain: counter)
-book_mark_domain_hash = [domain_counter]
-book_mark_tag_hash    = [tag_counter]
+shuffle(book_marks)
 
 # Final data structure
-final_data = {"book_Marks": book_marks, "book_mark_domain_hash": book_mark_domain_hash, "book_mark_tag_hash": book_mark_tag_hash}
+final_data = {"book_Marks": book_marks, "book_mark_domain_hash": domain_counter, "book_mark_tag_hash": tag_counter}
 
 output_file = args.outputdir / "bookmarks.json"
 

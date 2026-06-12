@@ -17,12 +17,13 @@ async function loadInfo() {
 		const data = await res.json();
 
 		const categories = data.book_Marks || data.categories || [];
-		const hashRaw		= (data.book_mark_domain_hash || [{}])[0] || {};
+		const domainHash = (data.book_mark_domain_hash || {});
+		const tagHash    = (data.book_mark_tag_hash    || {});
 
-		renderStats(categories, hashRaw);
+		renderStats(categories, domainHash, tagHash);
 		renderCategoryChart(categories);
-		renderTagCloud(categories);
-		renderDomainGrid(hashRaw);
+		renderTagCloud(tagHash);
+		renderDomainGrid(domainHash);
 
 	} catch (err) {
 		console.error('❌ info.js failed:', err);
@@ -35,17 +36,17 @@ async function loadInfo() {
 // STATS STRIP
 // =============================================
 
-function renderStats(categories, hashRaw) {
+function renderStats(categories, domainHash, tagHash) {
 	const allBookmarks = categories.flatMap(c => c.bookmarks || []);
-	const uniqueUrls	 = new Set(allBookmarks.map(b => b.url)).size;
-	const allTags			= new Set(allBookmarks.flatMap(b => b.tags || []));
-	const domains			= Object.keys(hashRaw).length;
+	const uniqueUrls   = new Set(allBookmarks.map(b => b.url)).size;
+	const domains      = Object.keys(domainHash).length;
+	const uniqueTags   = Object.keys(tagHash).length;
 
-	set('stat-total',	 allBookmarks.length);
-	set('stat-unique',	uniqueUrls);
-	set('stat-cats',		categories.length);
+	set('stat-total',   allBookmarks.length);
+	set('stat-unique',  uniqueUrls);
+	set('stat-cats',    categories.length);
 	set('stat-domains', domains);
-	set('stat-tags',		allTags.size);
+	set('stat-tags',    uniqueTags);
 }
 
 // =============================================
@@ -71,24 +72,15 @@ function renderCategoryChart(categories) {
 }
 
 // =============================================
-// TAG CLOUD
+// TAG CLOUD  (uses book_mark_tag_hash directly)
 // =============================================
 
-function renderTagCloud(categories) {
+function renderTagCloud(tagHash) {
 	const container = document.getElementById('tag-breakdown');
-	const allBookmarks = categories.flatMap(c => c.bookmarks || []);
 
-	// Count tag occurrences
-	const counts = {};
-	allBookmarks.forEach(bm => {
-		(bm.tags || []).forEach(tag => {
-			counts[tag] = (counts[tag] || 0) + 1;
-		});
-	});
-
-	const sorted = Object.entries(counts)
+	const sorted = Object.entries(tagHash)
 		.sort((a, b) => b[1] - a[1])
-		.slice(0, 60);	 // show top 60 tags max
+		.slice(0, 60);   // top 60 tags
 
 	if (!sorted.length) {
 		container.innerHTML = '<p style="color:var(--muted);font-size:12px">No tags found.</p>';
@@ -110,8 +102,8 @@ function renderTagCloud(categories) {
 // DOMAIN GRID
 // =============================================
 
-function renderDomainGrid(hashRaw) {
-	const domains = Object.entries(hashRaw).sort((a, b) => b[1] - a[1]);
+function renderDomainGrid(domainHash) {
+	const domains = Object.entries(domainHash).sort((a, b) => b[1] - a[1]);
 
 	const label = document.getElementById('domain-count-label');
 	if (label) label.textContent = domains.length;
@@ -123,8 +115,9 @@ function renderDomainGrid(hashRaw) {
 		return;
 	}
 
+	// Build cards — clicking navigates to index.html with ?q=domain pre-filled
 	container.innerHTML = domains.map(([domain, count]) => `
-		<div class="domain-card">
+		<div class="domain-card" data-domain="${esc(domain)}" title="Search all bookmarks from ${esc(domain)}" style="cursor:pointer">
 			<div class="domain-card-header">
 				<img
 					src="https://www.google.com/s2/favicons?sz=32&domain=${esc(domain)}"
@@ -132,12 +125,22 @@ function renderDomainGrid(hashRaw) {
 					loading="lazy"
 					onerror="this.style.display='none'"
 				>
-				<div class="domain-card-name" title="${esc(domain)}">${esc(domain)}</div>
+				<div class="domain-card-name">${esc(domain)}</div>
 			</div>
 			<div class="domain-card-count">${count}</div>
 			<div class="domain-card-label">bookmark${count !== 1 ? 's' : ''}</div>
+			<div class="domain-card-hint">🔍 search</div>
 		</div>
 	`).join('');
+
+	// Attach click handlers after rendering
+	container.querySelectorAll('.domain-card').forEach(card => {
+		card.addEventListener('click', () => {
+			const domain = card.dataset.domain;
+			// Navigate to index.html with the domain pre-filled in the search bar
+			window.location.href = `index.html?q=${encodeURIComponent(domain)}`;
+		});
+	});
 }
 
 // =============================================
