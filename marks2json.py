@@ -4,7 +4,6 @@ import argparse
 import json
 import re
 from pathlib import Path
-from random import shuffle
 from urllib.parse import urlparse
 
 import requests
@@ -168,6 +167,26 @@ def print_summary(book_marks: list[dict], domain_counter: dict, tag_counter: dic
 	print(f"   🏷️  Tags       : {len(tag_counter)}")
 	print(f"   💾 Saved to   : {output_file}")
 
+def bookmark_sort_key(bm: dict) -> str:
+	return (
+		bm.get("title")
+		or bm.get("description")
+		or bm.get("url")
+		or ""
+	).strip().lower()
+
+
+def sort_database(book_marks: list[dict]) -> list[dict]:
+	# Sort bookmarks inside each category
+	for category in book_marks:
+		category["bookmarks"].sort(key=bookmark_sort_key)
+
+	# Sort categories by category name
+	book_marks.sort(
+		key=lambda cat: cat.get("category", "").strip().lower()
+	)
+
+	return book_marks
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
 
@@ -182,7 +201,8 @@ def cmd_create(args: argparse.Namespace) -> None:
 	tag_counter:    dict[str, int] = {}
 
 	book_marks = process_files(args.files, args.icon, domain_counter, tag_counter)
-	shuffle(book_marks)
+
+	book_marks = sort_database(book_marks)
 
 	final_data = {
 		"book_Marks":            book_marks,
@@ -243,6 +263,9 @@ def cmd_append(args: argparse.Namespace) -> None:
 		print("   ℹ️  No new bookmarks to add (all URLs already exist in the database).")
 		return
 
+
+	book_marks = sort_database(book_marks)
+
 	final_data = {
 		"book_Marks":            book_marks,
 		"book_mark_domain_hash": domain_counter,
@@ -259,6 +282,12 @@ def build_parser() -> argparse.ArgumentParser:
 	parser = argparse.ArgumentParser(
 		prog="marks2json",
 		description="Convert bookmark .txt files into a JSON database",
+	)
+
+	parser.add_argument(
+		"-I", "--icon",
+		action="store_true",
+		help="Fetch channel icons (requires network)",
 	)
 
 	subparsers = parser.add_subparsers(dest="command", required=True)
@@ -282,11 +311,6 @@ def build_parser() -> argparse.ArgumentParser:
 		metavar="DB",
 		help="Output JSON file (default: bookmarks.json)",
 	)
-	create_parser.add_argument(
-		"-Y", "--icon",
-		action="store_true",
-		help="Fetch YouTube channel icons (requires network)",
-	)
 	create_parser.set_defaults(func=cmd_create)
 
 	# ── append ──
@@ -307,11 +331,6 @@ def build_parser() -> argparse.ArgumentParser:
 		required=True,
 		metavar="DB",
 		help="Path to the existing JSON database",
-	)
-	append_parser.add_argument(
-		"-Y", "--icon",
-		action="store_true",
-		help="Fetch YouTube channel icons (requires network)",
 	)
 	append_parser.set_defaults(func=cmd_append)
 

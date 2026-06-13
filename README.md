@@ -188,6 +188,9 @@ If the category name already exists in the database, new bookmarks are merged in
 ```
 usage: marks2json {create,append} ...
 
+options:
+  -I / --icon       Fetch channel icons (requires network)
+
 subcommands:
   create   Build a fresh database from .txt files
   append   Add bookmarks to an existing database
@@ -195,7 +198,6 @@ subcommands:
 shared options:
   FILE ...        One or more .txt bookmark files
   -T / --to DB    Output / target JSON file
-  -Y / --icon     Fetch YouTube channel icons (requires internet)
 ```
 
 ### The JSON schema
