@@ -666,7 +666,22 @@ a {
 	color: var(--muted);
 	display: flex;
 	align-items: center;
+	cursor: pointer;
 	gap: 5px;
+}
+
+.tag-cloud-toggle {
+	margin-top: 10px;
+	cursor: pointer;
+	font-size: 12px;
+	color: var(--muted);
+	user-select: none;
+}
+
+.tag-cloud-item:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+	text-decoration: underline;
 }
 
 .tag-cloud-item .tc-count {

@@ -88,7 +88,7 @@ def parse_bookmark_line(
 			url = part
 		elif part.startswith("#"):
 			tags.extend(
-				t.removeprefix("#").strip()
+				t.strip()
 				for t in part.split()
 				if t.startswith("#") and t.removeprefix("#").strip()
 			)

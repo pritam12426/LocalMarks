@@ -183,7 +183,7 @@ function renderTagBar(tags) {
 	tags.forEach(tag => {
 		const pill = document.createElement('span');
 		pill.className = 'tag-pill' + (activeTags.has(tag) ? ' active' : '');
-		pill.textContent = '#' + tag;
+		pill.textContent = tag;
 		pill.addEventListener('click', () => {
 			activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
 			renderPanel();
@@ -245,7 +245,7 @@ function buildCard(bm, { tagClickable = false } = {}) {
 				: ''}
 			${(bm.tags || []).length
 				? `<div class="bm-tags">${(bm.tags).map(t =>
-						`<span class="bm-tag" data-tag="${esc(t)}">#${esc(t)}</span>`
+						`<span class="bm-tag" data-tag="${esc(t)}">${esc(t)}</span>`
 					).join('')}</div>`
 				: ''}
 			<div class="bm-domain">${esc(domain)}</div>

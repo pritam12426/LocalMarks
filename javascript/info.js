@@ -79,23 +79,66 @@ function renderTagCloud(tagHash) {
 	const container = document.getElementById('tag-breakdown');
 
 	const sorted = Object.entries(tagHash)
-		.sort((a, b) => b[1] - a[1])
-		.slice(0, 60);   // top 60 tags
+		.sort((a, b) => b[1] - a[1]);
 
 	if (!sorted.length) {
-		container.innerHTML = '<p style="color:var(--muted);font-size:12px">No tags found.</p>';
+		container.innerHTML =
+			'<p style="color:var(--muted);font-size:12px">No tags found.</p>';
 		return;
 	}
 
-	container.innerHTML = `
-		<div class="tag-cloud">
-			${sorted.map(([tag, count]) =>
-				`<div class="tag-cloud-item">
-					#${esc(tag)}
-					<span class="tc-count">${count}</span>
-				</div>`
-			).join('')}
-		</div>`;
+	const INITIAL_COUNT = 35;
+	let expanded = false;
+
+	function render() {
+		const visible = expanded
+			? sorted
+			: sorted.slice(0, INITIAL_COUNT);
+
+		const hiddenCount = Math.max(
+			0,
+			sorted.length - INITIAL_COUNT
+		);
+
+		container.innerHTML = `
+			<div class="tag-cloud">
+				${visible.map(([tag, count]) => `
+					<div class="tag-cloud-item" data-tag="${esc(tag)}">
+						${esc(tag)}
+						<span class="tc-count">${count}</span>
+					</div>
+				`).join('')}
+			</div>
+
+			${hiddenCount > 0 ? `
+				<div class="tag-cloud-toggle">
+					${expanded
+						? '▼ Show less'
+						: `▶ +${hiddenCount} more tags`}
+				</div>
+			` : ''}
+		`;
+
+		// Tag click handlers
+		container.querySelectorAll('.tag-cloud-item').forEach(card => {
+			card.addEventListener('click', () => {
+				const tag = card.dataset.tag;
+				window.location.href =
+					`index.html?q=${encodeURIComponent(tag)}`;
+			});
+		});
+
+		// Fold/unfold handler
+		const toggle = container.querySelector('.tag-cloud-toggle');
+		if (toggle) {
+			toggle.addEventListener('click', () => {
+				expanded = !expanded;
+				render();
+			});
+		}
+	}
+
+	render();
 }
 
 // =============================================
