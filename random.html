@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>LocalMarks — Random</title>
+	<link rel="icon" href="favicon.ico">
+	<link rel="stylesheet" href="stylesheet/style.css">
+	<link id="theme-css" rel="stylesheet" disabled>
+</head>
+<body>
+	<header class="top-header">
+		<div class="header-inner">
+			<div class="header-left">
+				<a href="index.html" class="logo-link" title="Back to bookmarks">
+					<img src="favicon.ico" alt="" width="50">
+				</a>
+				<h1>🎲 Random Links</h1>
+			</div>
+			<div class="header-right">
+				<div class="Theme-selector">
+					<script src="javascript/theme.js"></script>
+				</div>
+				<a href="info.html" class="info-btn">📊 Info</a>
+				<a href="index.html" class="info-btn">← Back</a>
+			</div>
+		</div>
+	</header>
+
+	<div class="random-body">
+		<div class="random-controls">
+			<label for="random-count">How many random links?</label>
+			<div class="random-input-row">
+				<input type="number" id="random-count" value="3" min="1" max="999">
+				<input type="text" id="random-tag" placeholder="#tag (optional)" autocomplete="off">
+				<button id="random-go" class="info-btn" style="border-radius:20px;padding:8px 20px">🎲 Go</button>
+			</div>
+		</div>
+		<div class="bookmark-list" id="random-results"></div>
+	</div>
+
+	<script src="javascript/random.js"></script>
+</body>
+</html>

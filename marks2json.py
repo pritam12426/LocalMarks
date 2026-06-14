@@ -3,11 +3,20 @@
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 
+
+def excepthook(exc_type, exc_value, exc_tb):
+	if exc_type is KeyboardInterrupt:
+		print("\nInterrupted by user.", end="")
+		return
+	sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+sys.excepthook = excepthook
 
 def get_channel_icon_url(channel_url: str) -> str | None:
 	headers = {
@@ -228,9 +237,12 @@ def cmd_append(args: argparse.Namespace) -> None:
 	domain_counter: dict[str, int] = existing.get("book_mark_domain_hash", {})
 	tag_counter:    dict[str, int] = existing.get("book_mark_tag_hash", {})
 
-	# Build a set of already-known URLs so we don't add duplicates
-	known_urls: set[str] = {
-		bm["url"]
+	def bookmark_key(bookmark: dict) -> str:
+		return json.dumps(bookmark, sort_keys=True, ensure_ascii=False)
+
+	# Build a set of already-known bookmarks so we don't add duplicates
+	known_bookmarks: set[str] = {
+		bookmark_key(bm)
 		for cat in book_marks
 		for bm in cat.get("bookmarks", [])
 	}
@@ -241,28 +253,36 @@ def cmd_append(args: argparse.Namespace) -> None:
 	# Merge: if the category already exists add to it, otherwise append it
 	added_total = 0
 	for new_cat in new_categories:
-		new_bms = [bm for bm in new_cat["bookmarks"] if bm["url"] not in known_urls]
+		new_bms = [
+			bm
+			for bm in new_cat["bookmarks"]
+			if bookmark_key(bm) not in known_bookmarks
+		]
+
 		if not new_bms:
 			continue
 
 		added_total += len(new_bms)
-		known_urls.update(bm["url"] for bm in new_bms)
+		known_bookmarks.update(bookmark_key(bm) for bm in new_bms)
 
 		existing_cat = next(
 			(c for c in book_marks if c["category"] == new_cat["category"]),
 			None,
 		)
+
 		if existing_cat:
 			existing_cat["bookmarks"].extend(new_bms)
 			print(f"   ➕ {new_cat['category']}: added {len(new_bms)} bookmark(s)")
 		else:
-			book_marks.append({"category": new_cat["category"], "bookmarks": new_bms})
+			book_marks.append({
+				"category": new_cat["category"],
+				"bookmarks": new_bms,
+			})
 			print(f"   🆕 New category '{new_cat['category']}': {len(new_bms)} bookmark(s)")
 
 	if added_total == 0:
-		print("   ℹ️  No new bookmarks to add (all URLs already exist in the database).")
+		print("   ℹ️  No new bookmarks to add (all bookmarks already exist in the database).")
 		return
-
 
 	book_marks = sort_database(book_marks)
 
@@ -272,76 +292,33 @@ def cmd_append(args: argparse.Namespace) -> None:
 		"book_mark_tag_hash":    tag_counter,
 	}
 
-	output.write_text(json.dumps(final_data, indent="\t", ensure_ascii=False), encoding="utf-8")
-	print_summary(book_marks, domain_counter, tag_counter, output)
+	output.write_text(
+		json.dumps(final_data, indent="\t", ensure_ascii=False),
+		encoding="utf-8",
+	)
 
+	print_summary(book_marks, domain_counter, tag_counter, output)
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
-def build_parser() -> argparse.ArgumentParser:
-	parser = argparse.ArgumentParser(
-		prog="marks2json",
-		description="Convert bookmark .txt files into a JSON database",
-	)
+# def build_parser() -> argparse.ArgumentParser:
+parser = argparse.ArgumentParser( prog="marks2json", description="Convert bookmark .txt files into a JSON database")
+parser.add_argument( "-I", "--icon", action="store_true", help="Fetch channel icons (requires network)")
 
-	parser.add_argument(
-		"-I", "--icon",
-		action="store_true",
-		help="Fetch channel icons (requires network)",
-	)
+subparsers = parser.add_subparsers(dest="command", required=True)
 
-	subparsers = parser.add_subparsers(dest="command", required=True)
+# ── create ──
+create_parser = subparsers.add_parser( "create", help="Create a new bookmark database from .txt files")
+create_parser.add_argument( "files", type=Path, nargs="+", metavar="FILE", help="One or more .txt bookmark files")
+create_parser.add_argument( "-T", "--to", type=Path, default=Path("bookmarks.json"), metavar="DB", help="Output JSON file (default: bookmarks.json)")
+create_parser.set_defaults(func=cmd_create)
 
-	# ── create ──
-	create_parser = subparsers.add_parser(
-		"create",
-		help="Create a new bookmark database from .txt files",
-	)
-	create_parser.add_argument(
-		"files",
-		type=Path,
-		nargs="+",
-		metavar="FILE",
-		help="One or more .txt bookmark files",
-	)
-	create_parser.add_argument(
-		"-T", "--to",
-		type=Path,
-		default=Path("bookmarks.json"),
-		metavar="DB",
-		help="Output JSON file (default: bookmarks.json)",
-	)
-	create_parser.set_defaults(func=cmd_create)
-
-	# ── append ──
-	append_parser = subparsers.add_parser(
-		"append",
-		help="Append bookmarks from .txt files into an existing database",
-	)
-	append_parser.add_argument(
-		"files",
-		type=Path,
-		nargs="+",
-		metavar="FILE",
-		help="One or more .txt bookmark files",
-	)
-	append_parser.add_argument(
-		"-T", "--to",
-		type=Path,
-		required=True,
-		metavar="DB",
-		help="Path to the existing JSON database",
-	)
-	append_parser.set_defaults(func=cmd_append)
-
-	return parser
+# ── append ──
+append_parser = subparsers.add_parser("append", help="Append bookmarks from .txt files into an existing database")
+append_parser.add_argument("files", type=Path, nargs="+", metavar="FILE", help="One or more .txt bookmark files")
+append_parser.add_argument("-T", "--to", type=Path, required=True, metavar="DB", help="Path to the existing JSON database")
+append_parser.set_defaults(func=cmd_append)
 
 
-def main() -> None:
-	parser = build_parser()
-	args   = parser.parse_args()
-	args.func(args)
-
-
-if __name__ == "__main__":
-	main()
+args   = parser.parse_args()
+args.func(args)

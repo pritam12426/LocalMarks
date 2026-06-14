@@ -1,0 +1,32 @@
+/* ============================================
+   Theme: hackrd
+   How to make your own theme:
+   Copy this file, rename it, and change the
+   :root variable values below.  Any variable
+   you omit will fall back to style.css.
+   ============================================ */
+
+:root {
+	/* ── Backgrounds ── */
+	--bg:        #0a0e14;   /* page background       */
+	--surface:   #131a1f;   /* sidebar / card bg     */
+	--surface2:  #1a242b;   /* card hover bg         */
+	--surface3:  #212e36;   /* badge bg              */
+
+	/* ── Borders ── */
+	--border:    #1e2a33;
+	--border2:   #2a3e4a;
+
+	/* ── Text ── */
+	--text:      #b3d4e6;   /* primary text          */
+	--muted:     #6a8a9a;   /* secondary text        */
+	--muted2:    #4a6575;   /* placeholder / domain  */
+
+	/* ── Accent ── */
+	--accent:     #ff6b6b;   /* links / highlights    */
+	--accent-dim: #4a1a1a;   /* active sidebar bg     */
+	--accent-glow: rgba(255, 107, 107, 0.12);
+
+	/* ── Tags ── */
+	--tag-bg:    #162027;
+}

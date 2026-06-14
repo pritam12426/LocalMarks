@@ -10,6 +10,7 @@ let searchIndex    = [];   // flat list for searching
 let activeCategory = 0;    // index into allCategories
 let activeTags     = new Set();
 let searchQuery    = '';
+let tagBarExpanded = false; // was renderTagBar.expanded (fragile function-property)
 
 // ── DOM refs (resolved after DOMContentLoaded) ──
 let elSearch, elClear, elCatList, elSidebarCount,
@@ -28,7 +29,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 	elTagBar       = document.getElementById('tag-bar');
 	elBookmarkList = document.getElementById('bookmark-list');
 	elHeaderTitle  = document.getElementById('header-title');
-
 
 	bindGlobalEvents();
 	await loadData();
@@ -57,7 +57,7 @@ async function loadData() {
 		const urlParam = new URLSearchParams(window.location.search).get('q');
 		if (urlParam) {
 			elSearch.value = urlParam;
-			searchQuery = urlParam;
+			searchQuery    = urlParam;
 			elClear.classList.add('visible');
 			renderSearch(searchQuery);
 		} else {
@@ -70,22 +70,18 @@ async function loadData() {
 	}
 }
 
+// Flat index built once; each entry caches a pre-lowercased search string
 function buildSearchIndex() {
-	searchIndex = [];
-	allCategories.forEach(cat => {
-		(cat.bookmarks || []).forEach(bm => {
-			searchIndex.push({
-				category: cat.category,
-				bookmark: bm,
-				text: [
-					bm.title || '',
-					bm.description || '',
-					bm.url || '',
-					...(bm.tags || [])
-				].join(' ').toLowerCase()
-			});
-		});
-	});
+	searchIndex = allCategories.flatMap(cat =>
+		(cat.bookmarks || []).map(bm => ({
+			category: cat.category,
+			bookmark: bm,
+			text: [bm.title, bm.description, bm.url, ...(bm.tags || [])]
+				.filter(Boolean)
+				.join(' ')
+				.toLowerCase()
+		}))
+	);
 }
 
 function updateHeaderCount() {
@@ -99,8 +95,9 @@ function updateHeaderCount() {
 
 function renderSidebar() {
 	elSidebarCount.textContent = allCategories.length;
-	elCatList.innerHTML = '';
 
+	// Build all items at once with a fragment — one DOM insertion
+	const frag = document.createDocumentFragment();
 	allCategories.forEach((cat, i) => {
 		const li = document.createElement('li');
 		li.innerHTML = `
@@ -113,18 +110,22 @@ function renderSidebar() {
 			if (searchQuery) clearSearch();
 			activeCategory = i;
 			activeTags.clear();
+			tagBarExpanded = false;
 			highlightSidebar(i);
 			renderPanel();
 		});
 
-		elCatList.appendChild(li);
+		frag.appendChild(li);
 	});
+
+	elCatList.innerHTML = '';
+	elCatList.appendChild(frag);
 }
 
 function highlightSidebar(index) {
-	elCatList.querySelectorAll('li').forEach((li, i) => {
-		li.classList.toggle('active', i === index);
-	});
+	elCatList.querySelectorAll('li').forEach((li, i) =>
+		li.classList.toggle('active', i === index)
+	);
 }
 
 // =============================================
@@ -132,15 +133,12 @@ function highlightSidebar(index) {
 // =============================================
 
 function renderPanel() {
-	if (searchQuery) {
-		renderSearch(searchQuery);
-		return;
-	}
+	if (searchQuery) { renderSearch(searchQuery); return; }
 
 	const cat = allCategories[activeCategory];
 	if (!cat) return;
 
-	// Deduplicate by URL
+	// Deduplicate by URL (in-place, preserves original order)
 	const seen = new Set();
 	const bookmarks = (cat.bookmarks || []).filter(bm => {
 		if (seen.has(bm.url)) return false;
@@ -150,20 +148,23 @@ function renderPanel() {
 
 	// Apply tag filter
 	const filtered = activeTags.size
-		? bookmarks.filter(bm => [...activeTags].every(t => (bm.tags || []).includes(t)))
+		? bookmarks.filter(bm =>
+			[...activeTags].every(t => (bm.tags || []).includes(t))
+		  )
 		: bookmarks;
 
-	// Panel title
+	const countLabel = filtered.length !== bookmarks.length
+		? `${filtered.length} of ${bookmarks.length}`
+		: filtered.length;
+
 	elPanelTitle.innerHTML = `
 		📋 ${esc(cat.category)}
-		<span class="panel-count">(${filtered.length}${filtered.length !== bookmarks.length ? ` of ${bookmarks.length}` : ''})</span>
+		<span class="panel-count">(${countLabel})</span>
 	`;
 
-	// Tag bar
+	// Collect unique tags across all (unfiltered) bookmarks
 	const allTags = [...new Set(bookmarks.flatMap(bm => bm.tags || []))].sort();
 	renderTagBar(allTags);
-
-	// Cards
 	renderCards(filtered, elBookmarkList);
 }
 
@@ -173,79 +174,50 @@ function renderPanel() {
 
 function renderTagBar(tags) {
 	elTagBar.innerHTML = '';
-
-	if (!tags.length)
-		return;
+	if (!tags.length) return;
 
 	const INITIAL_COUNT = 30;
-
-	if (!renderTagBar.expanded)
-		renderTagBar.expanded = false;
-
-	const expanded = renderTagBar.expanded;
+	const frag = document.createDocumentFragment();
 
 	const label = document.createElement('span');
-	label.className = 'tag-bar-label';
+	label.className   = 'tag-bar-label';
 	label.textContent = 'Tags:';
-	elTagBar.appendChild(label);
+	frag.appendChild(label);
 
-	const visibleTags = expanded
-		? tags
-		: tags.slice(0, INITIAL_COUNT);
+	const visibleTags = tagBarExpanded ? tags : tags.slice(0, INITIAL_COUNT);
 
 	visibleTags.forEach(tag => {
 		const pill = document.createElement('span');
-
-		pill.className =
-			'tag-pill' +
-			(activeTags.has(tag) ? ' active' : '');
-
+		pill.className   = 'tag-pill' + (activeTags.has(tag) ? ' active' : '');
 		pill.textContent = tag;
-
 		pill.addEventListener('click', () => {
-			activeTags.has(tag)
-				? activeTags.delete(tag)
-				: activeTags.add(tag);
-
+			activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
 			renderPanel();
 		});
-
-		elTagBar.appendChild(pill);
+		frag.appendChild(pill);
 	});
 
 	if (tags.length > INITIAL_COUNT) {
 		const hiddenCount = tags.length - INITIAL_COUNT;
-
 		const toggle = document.createElement('button');
-		toggle.className = 'tag-clear';
-
-		toggle.textContent = expanded
-			? '▼ Show less'
-			: `▶ +${hiddenCount} more`;
-
+		toggle.className   = 'tag-clear';
+		toggle.textContent = tagBarExpanded ? '▼ Show less' : `▶ +${hiddenCount} more`;
 		toggle.addEventListener('click', () => {
-			renderTagBar.expanded =
-				!renderTagBar.expanded;
-
+			tagBarExpanded = !tagBarExpanded;
 			renderTagBar(tags);
 		});
-
-		elTagBar.appendChild(toggle);
+		frag.appendChild(toggle);
 	}
 
 	if (activeTags.size) {
 		const clr = document.createElement('button');
-
-		clr.className = 'tag-clear';
+		clr.className   = 'tag-clear';
 		clr.textContent = 'Clear filters';
-
-		clr.addEventListener('click', () => {
-			activeTags.clear();
-			renderPanel();
-		});
-
-		elTagBar.appendChild(clr);
+		clr.addEventListener('click', () => { activeTags.clear(); renderPanel(); });
+		frag.appendChild(clr);
 	}
+
+	elTagBar.appendChild(frag);
 }
 
 // =============================================
@@ -264,9 +236,10 @@ function renderCards(bookmarks, container) {
 		return;
 	}
 
-	bookmarks.forEach(bm => {
-		container.appendChild(buildCard(bm, { tagClickable: true }));
-	});
+	// DocumentFragment: one DOM write instead of N
+	const frag = document.createDocumentFragment();
+	bookmarks.forEach(bm => frag.appendChild(buildCard(bm, { tagClickable: true })));
+	container.appendChild(frag);
 }
 
 function buildCard(bm, { tagClickable = false } = {}) {
@@ -277,29 +250,27 @@ function buildCard(bm, { tagClickable = false } = {}) {
 	a.rel       = 'noopener noreferrer';
 
 	const domain       = bm.domain;
-	// const displayTitle = bm.title || bm.description || bm.url || domain;
 	const displayTitle = bm.title || bm.description || bm.url;
+	// Only need a custom faviconSrc when bm.icon exists; otherwise Google is both primary & fallback
 	const faviconSrc   = bm.icon || `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
-	// Fallback chain: bm.icon → google favicon → hidden
 	const fallbackSrc  = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
 
 	a.innerHTML = `
 		<img class="bm-favicon" src="${esc(faviconSrc)}" alt=""
-				 onerror="this.__retried ? this.style.display='none' : (this.__retried=true, this.src='${esc(fallbackSrc)}')">
+			onerror="this.__retried?this.style.display='none':(this.__retried=true,this.src='${esc(fallbackSrc)}')">
 		<div class="bm-body">
 			<div class="bm-title">${esc(displayTitle)}</div>
 			${bm.description && bm.description !== displayTitle
 				? `<div class="bm-desc">${esc(bm.description)}</div>`
 				: ''}
 			${(bm.tags || []).length
-				? `<div class="bm-tags">${(bm.tags).map(t =>
-						`<span class="bm-tag" data-tag="${esc(t)}">${esc(t)}</span>`
-					).join('')}</div>`
+				? `<div class="bm-tags">${bm.tags.map(t =>
+					`<span class="bm-tag" data-tag="${esc(t)}">${esc(t)}</span>`
+				  ).join('')}</div>`
 				: ''}
 			<div class="bm-domain">${esc(domain)}</div>
 		</div>`;
 
-	// Tags on cards trigger sidebar filter (only on index page)
 	if (tagClickable) {
 		a.querySelectorAll('.bm-tag').forEach(el => {
 			el.addEventListener('click', e => {
@@ -319,7 +290,7 @@ function buildCard(bm, { tagClickable = false } = {}) {
 // =============================================
 
 function renderSearch(query) {
-	const q = query.toLowerCase();
+	const q       = query.toLowerCase();
 	const results = searchIndex.filter(item => item.text.includes(q));
 
 	elPanelTitle.innerHTML = `
@@ -327,7 +298,6 @@ function renderSearch(query) {
 		<span class="panel-count">(${results.length})</span>
 	`;
 	elTagBar.innerHTML = '';
-	elBookmarkList.innerHTML = '';
 
 	if (!results.length) {
 		elBookmarkList.innerHTML = `
@@ -338,28 +308,31 @@ function renderSearch(query) {
 		return;
 	}
 
-	// Group by category
-	const groups = {};
-	results.forEach(item => {
-		(groups[item.category] = groups[item.category] || []).push(item.bookmark);
+	// Group by category — Map preserves insertion order
+	const groups = new Map();
+	results.forEach(({ category, bookmark }) => {
+		if (!groups.has(category)) groups.set(category, []);
+		groups.get(category).push(bookmark);
 	});
 
-	Object.entries(groups).forEach(([catName, bms]) => {
+	const frag = document.createDocumentFragment();
+	groups.forEach((bms, catName) => {
 		const header = document.createElement('div');
-		header.className = 'search-group-header';
+		header.className   = 'search-group-header';
 		header.textContent = `📋 ${catName}`;
-		elBookmarkList.appendChild(header);
+		frag.appendChild(header);
 
 		// Deduplicate within search results
 		const seen = new Set();
-		bms.filter(bm => {
-			if (seen.has(bm.url)) return false;
+		bms.forEach(bm => {
+			if (seen.has(bm.url)) return;
 			seen.add(bm.url);
-			return true;
-		}).forEach(bm => {
-			elBookmarkList.appendChild(buildCard(bm));
+			frag.appendChild(buildCard(bm));
 		});
 	});
+
+	elBookmarkList.innerHTML = '';
+	elBookmarkList.appendChild(frag);
 }
 
 // =============================================
@@ -367,26 +340,21 @@ function renderSearch(query) {
 // =============================================
 
 function bindGlobalEvents() {
-	// Search input
 	elSearch.addEventListener('input', () => {
 		searchQuery = elSearch.value.trim();
 		elClear.classList.toggle('visible', searchQuery.length > 0);
 
 		if (!searchQuery) {
-			// Return to category view
 			highlightSidebar(activeCategory);
 			renderPanel();
 		} else {
-			// Deselect sidebar when searching
 			elCatList.querySelectorAll('li').forEach(li => li.classList.remove('active'));
 			renderSearch(searchQuery);
 		}
 	});
 
-	// Clear button
 	elClear.addEventListener('click', clearSearch);
 
-	// Ctrl/Cmd + K
 	document.addEventListener('keydown', e => {
 		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
 			e.preventDefault();
@@ -401,7 +369,7 @@ function bindGlobalEvents() {
 
 function clearSearch() {
 	elSearch.value = '';
-	searchQuery = '';
+	searchQuery    = '';
 	elClear.classList.remove('visible');
 	activeTags.clear();
 	highlightSidebar(activeCategory);

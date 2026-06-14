@@ -1,8 +1,3 @@
 Add theme selected @CSS +JS
-Add new theme hacker line @CSS
-Ship this project with its owm static http server @own-server +js
-fix the UI: the tags counter shold how only fist 18 tags then a foldable button in which others are hidden, and when it is folded, it should show the number of tag are there
-Make database, json dynamic from other director is also @own-server like "$ bk-server ~/.local/share/bk/some.js"
-
-
-marks2json.py
+Add support of multi database.json in a dir 
+Add suppret of giving you a/n randome url (in a new page)
