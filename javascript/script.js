@@ -173,29 +173,77 @@ function renderPanel() {
 
 function renderTagBar(tags) {
 	elTagBar.innerHTML = '';
-	if (!tags.length) return;
+
+	if (!tags.length)
+		return;
+
+	const INITIAL_COUNT = 30;
+
+	if (!renderTagBar.expanded)
+		renderTagBar.expanded = false;
+
+	const expanded = renderTagBar.expanded;
 
 	const label = document.createElement('span');
 	label.className = 'tag-bar-label';
 	label.textContent = 'Tags:';
 	elTagBar.appendChild(label);
 
-	tags.forEach(tag => {
+	const visibleTags = expanded
+		? tags
+		: tags.slice(0, INITIAL_COUNT);
+
+	visibleTags.forEach(tag => {
 		const pill = document.createElement('span');
-		pill.className = 'tag-pill' + (activeTags.has(tag) ? ' active' : '');
+
+		pill.className =
+			'tag-pill' +
+			(activeTags.has(tag) ? ' active' : '');
+
 		pill.textContent = tag;
+
 		pill.addEventListener('click', () => {
-			activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
+			activeTags.has(tag)
+				? activeTags.delete(tag)
+				: activeTags.add(tag);
+
 			renderPanel();
 		});
+
 		elTagBar.appendChild(pill);
 	});
 
+	if (tags.length > INITIAL_COUNT) {
+		const hiddenCount = tags.length - INITIAL_COUNT;
+
+		const toggle = document.createElement('button');
+		toggle.className = 'tag-clear';
+
+		toggle.textContent = expanded
+			? '▼ Show less'
+			: `▶ +${hiddenCount} more`;
+
+		toggle.addEventListener('click', () => {
+			renderTagBar.expanded =
+				!renderTagBar.expanded;
+
+			renderTagBar(tags);
+		});
+
+		elTagBar.appendChild(toggle);
+	}
+
 	if (activeTags.size) {
 		const clr = document.createElement('button');
+
 		clr.className = 'tag-clear';
 		clr.textContent = 'Clear filters';
-		clr.addEventListener('click', () => { activeTags.clear(); renderPanel(); });
+
+		clr.addEventListener('click', () => {
+			activeTags.clear();
+			renderPanel();
+		});
+
 		elTagBar.appendChild(clr);
 	}
 }
