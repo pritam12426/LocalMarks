@@ -3,11 +3,20 @@
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 
+
+def excepthook(exc_type, exc_value, exc_tb):
+	if exc_type is KeyboardInterrupt:
+		print("\nInterrupted by user.", end="")
+		return
+	sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+sys.excepthook = excepthook
 
 def get_channel_icon_url(channel_url: str) -> str | None:
 	headers = {
