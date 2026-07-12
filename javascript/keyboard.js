@@ -144,8 +144,8 @@ overlay.innerHTML = `
 				<table>
 					<tr><td><kbd>j</kbd> / <kbd>↓</kbd></td><td>Next bookmark</td></tr>
 					<tr><td><kbd>k</kbd> / <kbd>↑</kbd></td><td>Previous bookmark</td></tr>
-					<tr><td><kbd>h</kbd></td><td>Back to categories</td></tr>
-					<tr><td><kbd>l</kbd></td><td>Into bookmarks</td></tr>
+					<tr><td><kbd>h</kbd> / <kbd>←</kbd></td><td>Back to categories</td></tr>
+					<tr><td><kbd>l</kbd> / <kbd>→</kbd></td><td>Into bookmarks</td></tr>
 					<tr><td><kbd>gg</kbd></td><td>Jump to first bookmark</td></tr>
 					<tr><td><kbd>G</kbd> (<kbd>Shift+G</kbd>)</td><td>Jump to last bookmark</td></tr>
 					<tr><td><kbd>/</kbd></td><td>Focus search</td></tr>

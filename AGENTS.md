@@ -28,7 +28,7 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 | File                      | Role                                                                                     |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
 | `index.html`              | Single-page shell (browse/info/random views via hash routing)                            |
-| `javascript/main.js`      | Entry point; bootstraps data, registers hash router, layout toggle, sidebar resizer      |
+| `javascript/main.js`      | Entry point; bootstraps data, registers hash router, layout toggle, sidebar resizer, SW  |
 | `javascript/data.js`      | Shared helpers (fetch, card builder, layout/favorites/theme, IndexedDB cache)            |
 | `javascript/browse.js`    | Browse view **orchestrator** — wires together submodules                                 |
 | `javascript/sidebar.js`   | Category sidebar rendering & events                                                      |
@@ -36,9 +36,11 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 | `javascript/tag-bar.js`   | Tag filter bar rendering & interaction                                                   |
 | `javascript/search.js`    | Search index building & results rendering                                                |
 | `javascript/keyboard.js`  | Vim-style keyboard navigation & help modal                                               |
-| `javascript/info.js`      | Info view (stats, domain grid, tag cloud, category chart)                                |
+| `javascript/info.js`      | Info view (stats, domain grid, tag cloud, category chart, health check)                  |
 | `javascript/random.js`    | Random view (picker with category/tag filters)                                           |
+| `javascript/health.js`    | Link health checker (async HEAD requests, progress, results table)                       |
 | `stylesheet/style.css`    | All visual styles (incl. responsive & reduced-motion)                                    |
+| `sw.js`                   | Service worker (offline cache, cache-first static, network-first bookmarks.json)         |
 | `marks2json.py`           | Standalone CLI to convert `.txt` → `bookmarks.json`                                      |
 
 ## marks2json details
@@ -77,8 +79,11 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 - **Layout toggle**: three modes (single-column, two-column grid, compact list) in the header; hidden on info/random views. Choice persisted in `localStorage` (key `localmarks-layout`).
 - **Sidebar resizer**: drag handle to resize sidebar (160–480px), double-click to reset. Width persisted in `localStorage` (key `localmarks-sidebar-w`).
 - Random view "Open All" opens bookmarks with 150ms staggered delays.
-- Vim-style keyboard navigation in browse view: `j`/`k` next/prev card, `h` back to sidebar, `l` into cards, `gg`/`G` first/last, `/` focus search, `?` help modal.
+- Vim-style keyboard navigation in browse view: `j`/`k` next/prev card, `h`/`←` back to sidebar, `l`/`→` into cards, `gg`/`G` first/last, `/` focus search, `?` help modal.
+- **New keyboard shortcuts**: `o` open in same tab, `yy` copy URL to clipboard, `p` pin/unpin bookmark (visual star, sorts to top).
 - **Modular browse view**: `browse.js` (orchestrator) + `sidebar.js` + `panel.js` + `tag-bar.js` + `search.js` + `keyboard.js`. Cross-module communication via `CustomEvent` on `window` (e.g., `sidebar-fav-click`, `tag-filter-change`, `search-query-changed`, `cards-rendered`).
+- **Link health check** (Info view): `🔍 Check All Links` button runs async HEAD requests with progress bar, shows results table (OK/redirect/4xx/5xx/error). Cancellable, configurable concurrency. Powered by `javascript/health.js`.
+- **Service worker** (`sw.js`): caches `bookmarks.json`, `index.html`, all JS/CSS/assets for offline use. Cache-first for static, network-first for `bookmarks.json`. Auto-updates in background.
 
 ## Database schema
 
@@ -119,6 +124,9 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 
 # Update with override (refresh existing URLs)
 python3 marks2json.py update new.txt -T bookmarks.json --override
+
+# Health check: open #info view and click "Check All Links"
+# Service worker: auto-registers on load (sw.js)
 ```
 
 ## Data flow

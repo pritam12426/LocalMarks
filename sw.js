@@ -1,22 +1,29 @@
-// LocalMarks Service Worker
-// Caches bookmarks.json and static assets for offline viewing
+// =============================================
+// sw.js  —  Service Worker for offline support
+// =============================================
 
 const CACHE_NAME = 'localmarks-v1';
 const STATIC_ASSETS = [
 	'/',
 	'/index.html',
+	'/bookmarks.json',
 	'/favicon.ico',
+	'/javascript/main.js',
+	'/javascript/data.js',
+	'/javascript/browse.js',
+	'/javascript/sidebar.js',
+	'/javascript/panel.js',
+	'/javascript/tag-bar.js',
+	'/javascript/search.js',
+	'/javascript/keyboard.js',
+	'/javascript/info.js',
+	'/javascript/random.js',
+	'/javascript/health.js',
 	'/stylesheet/style.css',
 	'/stylesheet/themes/light.css'
 ];
 
-const CACHE_STRATEGIES = {
-	// Network first, fallback to cache
-	networkFirst: ['/bookmarks.json'],
-	// Cache first, fallback to network
-	cacheFirst: [...STATIC_ASSETS]
-};
-
+// Install - cache static assets
 self.addEventListener('install', event => {
 	event.waitUntil(
 		caches.open(CACHE_NAME)
@@ -25,6 +32,7 @@ self.addEventListener('install', event => {
 	);
 });
 
+// Activate - clean old caches
 self.addEventListener('activate', event => {
 	event.waitUntil(
 		caches.keys()
@@ -36,28 +44,22 @@ self.addEventListener('activate', event => {
 	);
 });
 
+// Fetch - cache-first for static, network-first for bookmarks.json
 self.addEventListener('fetch', event => {
-	const url = new URL(event.request.url);
+	const {request} = event;
+	const url = new URL(request.url);
 
 	// Only handle same-origin requests
 	if (url.origin !== location.origin) return;
 
-	const pathname = url.pathname;
-
-	// Network-first for bookmarks.json
-	if (pathname === '/bookmarks.json') {
-		event.respondWith(networkFirst(event.request));
+	// Network-first for bookmarks.json (always want fresh data)
+	if (url.pathname === '/bookmarks.json') {
+		event.respondWith(networkFirst(request));
 		return;
 	}
 
-	// Cache-first for static assets
-	if (CACHE_STRATEGIES.cacheFirst.some(path => pathname.startsWith(path) || pathname === path)) {
-		event.respondWith(cacheFirst(event.request));
-		return;
-	}
-
-	// Default: network first for everything else
-	event.respondWith(networkFirst(event.request));
+	// Cache-first for everything else
+	event.respondWith(cacheFirst(request));
 });
 
 async function networkFirst(request) {
@@ -70,25 +72,14 @@ async function networkFirst(request) {
 		return response;
 	} catch (err) {
 		const cached = await cache.match(request);
-		if (cached) return cached;
-		// Return offline fallback for navigation requests
-		if (request.mode === 'navigate') {
-			return caches.match('/index.html');
-		}
-		throw err;
+		return cached || new Response('Offline', {status: 503, statusText: 'Offline'});
 	}
 }
 
 async function cacheFirst(request) {
 	const cache = await caches.open(CACHE_NAME);
 	const cached = await cache.match(request);
-	if (cached) {
-		// Update cache in background
-		fetch(request).then(response => {
-			if (response.ok) cache.put(request, response);
-		}).catch(() => {});
-		return cached;
-	}
+	if (cached) return cached;
 
 	try {
 		const response = await fetch(request);
@@ -97,11 +88,7 @@ async function cacheFirst(request) {
 		}
 		return response;
 	} catch (err) {
-		// Return offline fallback for navigation
-		if (request.mode === 'navigate') {
-			return caches.match('/index.html');
-		}
-		throw err;
+		return new Response('Offline', {status: 503, statusText: 'Offline'});
 	}
 }
 
