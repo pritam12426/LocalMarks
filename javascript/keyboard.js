@@ -152,7 +152,6 @@ function ensureHelpModal()
 					<tr><td><kbd>Enter</kbd></td><td>Open focused bookmark</td></tr>
 					<tr><td><kbd>Esc</kbd></td><td>Clear search / close this window</td></tr>
 					<tr><td><kbd>?</kbd></td><td>Toggle this help window</td></tr>
-					<tr><td><kbd>Ctrl/Cmd+K</kbd></td><td>Focus search</td></tr>
 				</table>
 			</div>
 		</div>
@@ -244,18 +243,22 @@ function handleGlobalKeys(e)
 
 	switch (e.key.toLowerCase()) {
 	case 'j':
+	case 'arrowdown':
 		e.preventDefault();
 		focusNextCard();
 		break;
 	case 'k':
+	case 'arrowup':
 		e.preventDefault();
 		focusPrevCard();
 		break;
 	case 'h':
+	case 'arrowleft':
 		e.preventDefault();
 		focusSidebar();
 		break;
 	case 'l':
+	case 'arrowright':
 		e.preventDefault();
 		if (state.focusedCardIndex === -1)
 			focusFirstCard();
