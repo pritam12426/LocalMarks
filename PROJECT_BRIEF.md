@@ -93,8 +93,10 @@ LocalMarks/
 ├── bookmarks.json                # Generated database (committed)
 ├── bookmarks.json--              # Backup (ignored by viewer)
 ├── marks2json.py                 # CLI converter (.txt → .json)
+├── sw.js                         # Service worker (offline support)
 ├── README.md                     # User documentation
 ├── AGENTS.md                     # Agent instructions
+├── DEV.md                        # Developer guide
 ├── REFERENCES.md                 # Empty placeholder
 ├── TODO.txt                      # Empty placeholder
 ├── LICENSE                       # MIT
@@ -108,16 +110,17 @@ LocalMarks/
 │   └── themes/
 │       └── light.css             # Light theme (media query activated)
 ├── javascript/
-│   ├── main.js                   # Entry point, router, UI init
+│   ├── main.js                   # Entry point, router, UI init, SW registration
 │   ├── data.js                   # Shared utilities (fetch, cache, card, theme, favorites, layout, sidebar)
 │   ├── browse.js                 # Browse orchestrator + event wiring
 │   ├── sidebar.js                # Category sidebar rendering
 │   ├── panel.js                  # Main panel (cards, favorites, tag filtering)
 │   ├── tag-bar.js                # Tag filter pills + expand/collapse
 │   ├── search.js                 # Search index + grouped results
-│   ├── keyboard.js               # Vim nav + help modal + search input
-│   ├── info.js                   # Database stats view
-│   └── random.js                 # Random picker view
+│   ├── keyboard.js               # Vim nav + help modal + search input + shortcuts
+│   ├── info.js                   # Database stats view + health check
+│   ├── random.js                 # Random picker view
+│   └── health.js                 # Link health checker (async HEAD, progress, results)
 └── .gitignore                    # *.svg, *.json, assets/favicon/*, __pycache__
 ```
 
@@ -320,17 +323,20 @@ searchIndex = categories.flatMap(cat =>
 
 ---
 
-### 4.10 `keyboard.js` — Vim Navigation + Help Modal
+### 4.10 `keyboard.js` — Vim Navigation + Help Modal + Shortcuts
 
 **Global keys** (browse view only, not in inputs):
 
-- `j`/`k` → next/prev card
-- `h` → back to sidebar
-- `l` → into cards (focus first if none)
+- `j`/`k` / ArrowDown/Up → next/prev card
+- `h` / ArrowLeft → back to sidebar
+- `l` / ArrowRight → into cards (focus first if none)
 - `gg` / `G` (Shift+G) → first/last card
 - `/` → focus search (anywhere)
 - `?` → toggle help modal
-- `Enter` → open focused card
+- `Enter` → open focused card (new tab)
+- `o` → open focused card (same tab)
+- `yy` → copy URL to clipboard (shows domain toast)
+- `p` → pin/unpin bookmark (toggles star)
 - `Esc` → clear search + blur cards
 
 **List keys** (inside card list):
@@ -349,7 +355,7 @@ searchIndex = categories.flatMap(cat =>
 
 ---
 
-### 4.11 `info.js` — Database Stats View
+### 4.11 `info.js` — Database Stats View + Link Health Check
 
 **Renders**:
 
@@ -357,6 +363,9 @@ searchIndex = categories.flatMap(cat =>
 - Category bar chart (horizontal, % of max)
 - Tag cloud (from `book_mark_tag_hash`, top 35 + expand)
 - Domain grid (from `book_mark_domain_hash`, clickable → `#browse?q=domain`)
+- **Link Health Check**: "🔍 Check All Links" button runs async HEAD requests with progress bar; results table shows OK (2xx), Redirect (3xx), Client Error (4xx), Server Error (5xx), Network Error. Cancellable, configurable concurrency (default 5).
+
+**Health check powered by**: `health.js` (async workers, AbortController for cancellation, progress callbacks).
 
 **All from**: `data.book_Marks`, `data.book_mark_domain_hash`, `data.book_mark_tag_hash`.
 
@@ -374,7 +383,54 @@ searchIndex = categories.flatMap(cat =>
 
 ---
 
-### 4.13 `stylesheet/style.css` — All Styles
+### 4.12 `random.js` — Random Picker
+
+**State**: `allBookmarks[]` (flattened with `_category`), `lastPicked[]`.
+
+**Controls**: Count input, category `<select>`, tag `<input list=datalist>`.
+
+**Algorithm**: Fisher-Yates shuffle on filtered pool (`catFilter`, `tagFilter`).
+
+**Open All**: `setTimeout(window.open, i * 150)` staggered delays.
+
+---
+
+### 4.13 `health.js` — Link Health Checker
+
+**Exports**: `checkAllBookmarks(categories, {concurrency, progress, complete})`, `cancelCheck()`.
+
+**Algorithm**:
+1. Flattens categories → unique URLs
+2. Creates worker pool (default 5 concurrent)
+3. Each worker: HEAD request → fallback GET (no-cors) → classify status
+4. Progress callback: `(url, checked, total)`
+5. Complete callback: `results[]` with `{url, category, status, error}`
+
+**Categories**: `ok` (2xx), `redirect` (3xx), `client-error` (4xx), `server-error` (5xx), `error` (network), `cancelled`.
+
+**Cancellation**: `AbortController` aborts all in-flight requests.
+
+---
+
+### 4.14 `sw.js` — Service Worker (Offline Support)
+
+**Caches**: `localmarks-v1` with static assets (HTML, CSS, JS, favicon, bookmarks.json).
+
+**Strategies**:
+- **Network-first** for `/bookmarks.json` (always fresh, cache on success)
+- **Cache-first** for static assets (serve from cache, update in background)
+
+**Install**: Pre-caches all static assets, `skipWaiting()`.
+
+**Activate**: Cleans old caches, `clients.claim()`.
+
+**Fetch**: Intercepts same-origin requests, applies strategy.
+
+**Message handling**: `skipWaiting` message from main thread.
+
+---
+
+### 4.15 `stylesheet/style.css` — All Styles
 
 **CSS Custom Properties** (root):
 
@@ -397,7 +453,7 @@ searchIndex = categories.flatMap(cat =>
 
 ---
 
-### 4.14 `stylesheet/themes/light.css` — Light Theme
+### 4.16 `stylesheet/themes/light.css` — Light Theme
 
 Overrides root custom properties for light mode. Activated by browser via media query.
 
@@ -558,7 +614,7 @@ Overrides root custom properties for light mode. Activated by browser via media 
 ## 13. Mental Model Checklist
 
 - [ ] Single HTML file, hash routing, 3 views
-- [ ] `main.js` = boot + router + global UI (theme/layout/sidebar)
+- [ ] `main.js` = boot + router + global UI (theme/layout/sidebar) + SW registration
 - [ ] `data.js` = all shared logic (fetch, cache, card, favorites, theme, layout, sidebar)
 - [ ] `browse.js` = orchestrator; 5 submodules (sidebar, panel, tag-bar, search, keyboard)
 - [ ] Communication = `CustomEvent` on `window`
@@ -566,6 +622,8 @@ Overrides root custom properties for light mode. Activated by browser via media 
 - [ ] `marks2json.py` = offline converter, stdlib-only (+`requests` for icons)
 - [ ] Source = `.txt` files (pipe-separated, category = filename)
 - [ ] No build, no deps, no config files
+- [ ] **Link health check** (`health.js`) = async HEAD workers + progress + results table
+- [ ] **Service worker** (`sw.js`) = offline cache (cache-first static, network-first bookmarks.json)
 
 ---
 
@@ -587,4 +645,10 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 
 # Override existing URLs on update
 python3 marks2json.py update new.txt -T bookmarks.json --override
+
+# Health check: open #info view and click "Check All Links"
+# Service worker: auto-registers on load (sw.js)
+
+# Clear IndexedDB cache (in DevTools Console)
+indexedDB.deleteDatabase('LocalMarksCache')
 ```
