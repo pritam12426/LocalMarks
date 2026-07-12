@@ -25,16 +25,21 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 
 ## Architecture
 
-| File                   | Role                                                                                |
-| ---------------------- | ----------------------------------------------------------------------------------- |
-| `index.html`           | Single-page shell (browse/info/random views via hash routing)                       |
-| `javascript/main.js`   | Entry point; bootstraps data, registers hash router, layout toggle, sidebar resizer |
-| `javascript/data.js`   | Shared helpers (fetch, card builder, layout/favorites/theme, IndexedDB cache)       |
-| `javascript/browse.js` | Browse view (categories, search, tags, cards, keyboard nav)                         |
-| `javascript/info.js`   | Info view (stats, domain grid, tag cloud, category chart)                           |
-| `javascript/random.js` | Random view (picker with category/tag filters)                                      |
-| `stylesheet/style.css` | All visual styles (incl. responsive & reduced-motion)                               |
-| `marks2json.py`        | Standalone CLI to convert `.txt` → `bookmarks.json`                                 |
+| File                      | Role                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `index.html`              | Single-page shell (browse/info/random views via hash routing)                            |
+| `javascript/main.js`      | Entry point; bootstraps data, registers hash router, layout toggle, sidebar resizer      |
+| `javascript/data.js`      | Shared helpers (fetch, card builder, layout/favorites/theme, IndexedDB cache)            |
+| `javascript/browse.js`    | Browse view **orchestrator** — wires together submodules                                 |
+| `javascript/sidebar.js`   | Category sidebar rendering & events                                                      |
+| `javascript/panel.js`     | Main panel rendering (categories, favorites, cards)                                      |
+| `javascript/tag-bar.js`   | Tag filter bar rendering & interaction                                                   |
+| `javascript/search.js`    | Search index building & results rendering                                                |
+| `javascript/keyboard.js`  | Vim-style keyboard navigation & help modal                                               |
+| `javascript/info.js`      | Info view (stats, domain grid, tag cloud, category chart)                                |
+| `javascript/random.js`    | Random view (picker with category/tag filters)                                           |
+| `stylesheet/style.css`    | All visual styles (incl. responsive & reduced-motion)                                    |
+| `marks2json.py`           | Standalone CLI to convert `.txt` → `bookmarks.json`                                      |
 
 ## marks2json details
 
@@ -73,6 +78,7 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 - **Sidebar resizer**: drag handle to resize sidebar (160–480px), double-click to reset. Width persisted in `localStorage` (key `localmarks-sidebar-w`).
 - Random view "Open All" opens bookmarks with 150ms staggered delays.
 - Vim-style keyboard navigation in browse view: `j`/`k` next/prev card, `h` back to sidebar, `l` into cards, `gg`/`G` first/last, `/` focus search, `?` help modal.
+- **Modular browse view**: `browse.js` (orchestrator) + `sidebar.js` + `panel.js` + `tag-bar.js` + `search.js` + `keyboard.js`. Cross-module communication via `CustomEvent` on `window` (e.g., `sidebar-fav-click`, `tag-filter-change`, `search-query-changed`, `cards-rendered`).
 
 ## Database schema
 

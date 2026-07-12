@@ -4,12 +4,13 @@
 
 'use strict';
 
-import { esc } from './data.js';
+import {esc} from './data.js';
 
-export function renderInfo(data) {
+export function renderInfo(data)
+{
 	const categories = data.book_Marks || data.categories || [];
 	const domainHash = data.book_mark_domain_hash || {};
-	const tagHash    = data.book_mark_tag_hash    || {};
+	const tagHash    = data.book_mark_tag_hash || {};
 
 	renderStats(categories, domainHash, tagHash);
 	renderCategoryChart(categories);
@@ -19,26 +20,28 @@ export function renderInfo(data) {
 
 // ── Stats strip ──
 
-function renderStats(categories, domainHash, tagHash) {
+function renderStats(categories, domainHash, tagHash)
+{
 	const allBookmarks = categories.flatMap(c => c.bookmarks || []);
-	set('stat-total',   allBookmarks.length);
-	set('stat-unique',  new Set(allBookmarks.map(b => b.url)).size);
-	set('stat-cats',    categories.length);
+	set('stat-total', allBookmarks.length);
+	set('stat-unique', new Set(allBookmarks.map(b => b.url)).size);
+	set('stat-cats', categories.length);
 	set('stat-domains', Object.keys(domainHash).length);
-	set('stat-tags',    Object.keys(tagHash).length);
+	set('stat-tags', Object.keys(tagHash).length);
 }
 
 // ── Category breakdown ──
 
-function renderCategoryChart(categories) {
+function renderCategoryChart(categories)
+{
 	const container = document.getElementById('cat-breakdown');
 	const counts    = categories.map(c => (c.bookmarks || []).length);
 	const max       = Math.max(...counts, 1);
 
 	const frag = document.createDocumentFragment();
 	categories.forEach((cat, i) => {
-		const pct = Math.round(counts[i] / max * 100);
-		const row = document.createElement('div');
+		const pct     = Math.round(counts[i] / max * 100);
+		const row     = document.createElement('div');
 		row.className = 'cat-row';
 		row.innerHTML = `
 			<div class="cat-row-name" title="${esc(cat.category)}">📋 ${esc(cat.category)}</div>
@@ -56,7 +59,8 @@ function renderCategoryChart(categories) {
 
 // ── Tag cloud ──
 
-function renderTagCloud(tagHash) {
+function renderTagCloud(tagHash)
+{
 	const container = document.getElementById('tag-breakdown');
 	const sorted    = Object.entries(tagHash).sort((a, b) => b[1] - a[1]);
 
@@ -66,18 +70,19 @@ function renderTagCloud(tagHash) {
 	}
 
 	const INITIAL_COUNT = 35;
-	let expanded = false;
+	let   expanded      = false;
 
-	function render() {
+	function render()
+	{
 		const visible     = expanded ? sorted : sorted.slice(0, INITIAL_COUNT);
 		const hiddenCount = Math.max(0, sorted.length - INITIAL_COUNT);
 
-		const frag  = document.createDocumentFragment();
-		const cloud = document.createElement('div');
+		const frag      = document.createDocumentFragment();
+		const cloud     = document.createElement('div');
 		cloud.className = 'tag-cloud';
 
 		visible.forEach(([tag, count]) => {
-			const item = document.createElement('div');
+			const item     = document.createElement('div');
 			item.className = 'tag-cloud-item';
 			item.innerHTML = `${esc(tag)}<span class="tc-count">${count}</span>`;
 			item.addEventListener('click', () => {
@@ -89,10 +94,13 @@ function renderTagCloud(tagHash) {
 		frag.appendChild(cloud);
 
 		if (hiddenCount > 0) {
-			const toggle = document.createElement('div');
+			const toggle       = document.createElement('div');
 			toggle.className   = 'tag-cloud-toggle';
 			toggle.textContent = expanded ? '▼ Show less' : `▶ +${hiddenCount} more tags`;
-			toggle.addEventListener('click', () => { expanded = !expanded; render(); });
+			toggle.addEventListener('click', () => {
+				expanded = !expanded;
+				render();
+			});
 			frag.appendChild(toggle);
 		}
 
@@ -105,21 +113,24 @@ function renderTagCloud(tagHash) {
 
 // ── Domain grid ──
 
-function renderDomainGrid(domainHash) {
+function renderDomainGrid(domainHash)
+{
 	const domains   = Object.entries(domainHash).sort((a, b) => b[1] - a[1]);
 	const container = document.getElementById('domain-grid');
 	const label     = document.getElementById('domain-count-label');
 
-	if (label) label.textContent = domains.length;
+	if (label)
+		label.textContent = domains.length;
 
 	if (!domains.length) {
-		container.innerHTML = '<p style="color:var(--muted);font-size:12px">No domain data in book_mark_domain_hash.</p>';
+		container.innerHTML
+		    = '<p style="color:var(--muted);font-size:12px">No domain data in book_mark_domain_hash.</p>';
 		return;
 	}
 
 	const frag = document.createDocumentFragment();
 	domains.forEach(([domain, count]) => {
-		const card = document.createElement('div');
+		const card     = document.createElement('div');
 		card.className = 'domain-card';
 		card.title     = `Search all bookmarks from ${domain}`;
 		card.innerHTML = `
@@ -144,7 +155,9 @@ function renderDomainGrid(domainHash) {
 
 // ── Util ──
 
-function set(id, val) {
+function set(id, val)
+{
 	const el = document.getElementById(id);
-	if (el) el.textContent = val;
+	if (el)
+		el.textContent = val;
 }
