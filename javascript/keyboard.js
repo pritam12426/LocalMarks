@@ -194,6 +194,24 @@ function closeKeyboardHelp()
 	}
 }
 
+// Destroy keyboard module: remove event listeners and modal
+function destroyKeyboard()
+{
+	document.removeEventListener('keydown', handleGlobalKeys);
+	if (state.bookmarkListEl)
+		state.bookmarkListEl.removeEventListener('keydown', handleListKeys);
+	if (state.catListEl)
+		state.catListEl.removeEventListener('keydown', handleSidebarKeys);
+	if (state.searchEl) {
+		state.searchEl.removeEventListener('input', handleSearchInput);
+		state.searchEl.removeEventListener('keydown', handleSearchKeydown);
+	}
+	if (state.helpModal) {
+		state.helpModal.remove();
+		state.helpModal = null;
+	}
+}
+
 function handleGlobalKeys(e)
 {
 	if (isHelpOpen()) {

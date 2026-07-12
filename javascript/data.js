@@ -150,12 +150,20 @@ export function initTheme()
 	}
 
 	// Listen for system preference changes
-	window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+	const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+	const handler = (e) => {
 		if (!localStorage.getItem(THEME_KEY)) {
 			const newTheme = e.matches ? 'light' : 'dark';
 			setTheme(newTheme);
 		}
-	});
+	};
+	mediaQuery.addEventListener('change', handler);
+
+	// Return cleanup function
+	return () => {
+		if (toggle) toggle.removeEventListener('click', toggleTheme);
+		mediaQuery.removeEventListener('change', handler);
+	};
 }
 
 // ── Layout (localStorage) ──────────────────

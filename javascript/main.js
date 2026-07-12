@@ -103,7 +103,8 @@ function initSidebarResizer()
 	let dragging    = false;
 	let sidebarRect = null;
 
-	handle.addEventListener('mousedown', e => {
+	function onMouseDown(e)
+	{
 		if (window.innerWidth <= 768)
 			return;
 		dragging    = true;
@@ -111,32 +112,49 @@ function initSidebarResizer()
 		handle.classList.add('dragging');
 		document.body.classList.add('sidebar-resizing');
 		e.preventDefault();
-	});
+	}
 
-	window.addEventListener('mousemove', e => {
+	function onMouseMove(e)
+	{
 		if (!dragging || !sidebarRect)
 			return;
 		const width = clamp(e.clientX - sidebarRect.left);
 		document.documentElement.style.setProperty('--sidebar-w', `${width}px`);
-	});
+	}
 
-	window.addEventListener('mouseup', () => {
+	function onMouseUp()
+	{
 		if (!dragging)
 			return;
-		dragging = false;
+		dragging    = false;
+		sidebarRect = null;
 		handle.classList.remove('dragging');
 		document.body.classList.remove('sidebar-resizing');
 		const width
 		    = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'),
 		               10);
 		setSidebarWidth(width);
-	});
+	}
 
 	// Double-click resets to the default width
-	handle.addEventListener('dblclick', () => {
+	function onDblClick()
+	{
 		document.documentElement.style.removeProperty('--sidebar-w');
 		setSidebarWidth(null);
-	});
+	}
+
+	handle.addEventListener('mousedown', onMouseDown);
+	window.addEventListener('mousemove', onMouseMove);
+	window.addEventListener('mouseup', onMouseUp);
+	handle.addEventListener('dblclick', onDblClick);
+
+	// Return cleanup function
+	return () => {
+		handle.removeEventListener('mousedown', onMouseDown);
+		window.removeEventListener('mousemove', onMouseMove);
+		window.removeEventListener('mouseup', onMouseUp);
+		handle.removeEventListener('dblclick', onDblClick);
+	};
 }
 
 

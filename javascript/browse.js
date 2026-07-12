@@ -20,10 +20,10 @@ import {
 	clearActiveTags
 } from './panel.js';
 
-import {initSearch, renderSearch, clearSearch as searchClear, rebuildIndex} from './search.js';
+import {initSearch, renderSearch, clearSearch as searchClear} from './search.js';
 import {initTagBar, getActiveTags, setActiveTags, renderTagBar} from './tag-bar.js';
 import {initKeyboard, refreshCards, focusFirstCard} from './keyboard.js';
-import {esc, getFavorites, buildCard} from './data.js';
+import {getFavorites, buildCard} from './data.js';
 
 let allCategories  = [];
 let searchQuery    = '';
