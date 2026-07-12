@@ -31,12 +31,11 @@
 	--sidebar-w:   230px;
 	--header-h:    112px;
 	--font-ui:     'Segoe UI', system-ui, -apple-system, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
-	--font-mono:   ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+	--font-mono:   'Cascadia Code', 'Fira Code', 'Consolas', monospace;
 	--transition:  0.15s ease;
 }
 
 html {
-	scroll-behavior: smooth;
 }
 
 body {
@@ -308,12 +307,6 @@ a {
 .sidebar-resizer:hover::after,
 .sidebar-resizer.dragging::after {
 	opacity: 1;
-}
-
-.sidebar-resizer:focus,
-.sidebar-resizer:focus-visible {
-	outline: none;
-	box-shadow: none;
 }
 
 body.sidebar-resizing {
@@ -1462,6 +1455,16 @@ body.sidebar-resizing .main-panel {
 	border-radius: 16px;
 }
 
+/* These containers get tabindex="-1" + a programmatic .focus() purely so
+   keyboard/screen-reader users land somewhere sensible after a route
+   change — they're not meant to show a visible ring around the whole
+   page every time you refresh or switch views. */
+#main-panel:focus-visible,
+.info-body:focus-visible,
+.random-body:focus-visible {
+	outline: none;
+}
+
 /* ── Favicon Lazy Loading ── */
 .bm-favicon[data-lazy] {
 	opacity: 0;
@@ -1488,179 +1491,8 @@ body.sidebar-resizing .main-panel {
 	cursor: pointer;
 	transition: background var(--transition), color var(--transition);
 }
-.state-empty .state-action:hover
-{
+
+.state-empty .state-action:hover {
 	background: var(--accent);
 	color: var(--surface);
-}
-
-/* ── Health Check ── */
-.health-controls {
-	display: flex;
-	gap: 12px;
-	align-items: center;
-	margin-bottom: 16px;
-	flex-wrap: wrap;
-}
-
-.health-progress {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	flex: 1;
-	min-width: 200px;
-}
-
-.progress-bar {
-	flex: 1;
-	height: 8px;
-	background: var(--border);
-	border-radius: 4px;
-	overflow: hidden;
-}
-
-.progress-fill {
-	height: 100%;
-	background: var(--accent);
-	transition: width 0.3s ease;
-	border-radius: 4px;
-}
-
-.progress-text {
-	font-size: 13px;
-	color: var(--muted);
-	min-width: 80px;
-	text-align: right;
-}
-
-.health-category {
-	margin-bottom: 16px;
-}
-
-.health-category h4 {
-	margin: 0 0 8px;
-	font-size: 14px;
-	color: var(--muted);
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-
-.health-list {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
-.health-list li {
-	display: grid;
-	grid-template-columns: 1fr auto auto;
-	gap: 12px;
-	padding: 10px 12px;
-	background: var(--surface);
-	border: 1px solid var(--border);
-	border-radius: var(--radius-sm);
-	margin-bottom: 8px;
-	font-size: 13px;
-	align-items: center;
-}
-
-.health-url {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: var(--fg);
-}
-
-.health-status {
-	padding: 2px 8px;
-	border-radius: 99px;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	white-space: nowrap;
-}
-
-.health-status.ok { background: #dcfce7; color: #166534; }
-.health-status.redirect { background: #fef3c7; color: #92400e; }
-.health-status.client-error { background: #fee2e2; color: #991b1b; }
-.health-status.server-error { background: #fecaca; color: #7f1d1d; }
-.health-status.error { background: #fef2f2; color: #b91c1c; }
-.health-status.cancelled { background: var(--border); color: var(--muted); }
-
-.health-titles {
-	color: var(--muted);
-	font-size: 12px;
-	max-width: 200px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-#health-summary {
-	color: var(--accent);
-	font-weight: 500;
-}
-
-.btn {
-	padding: 8px 16px;
-	border-radius: var(--radius-sm);
-	border: 1px solid var(--border);
-	background: var(--surface);
-	color: var(--fg);
-	cursor: pointer;
-	font-size: 13px;
-	transition: background var(--transition), border-color var(--transition);
-}
-
-.btn:hover {
-	background: var(--surface2);
-	border-color: var(--accent);
-}
-
-.btn:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-.btn-primary {
-	background: var(--accent);
-	color: white;
-	border-color: var(--accent);
-}
-
-.btn-primary:hover {
-	background: var(--accent-hover);
-	border-color: var(--accent-hover);
-}
-
-/* ── Keyboard Toast ── */
-.kb-toast {
-	position: fixed;
-	bottom: 24px;
-	right: 24px;
-	background: var(--surface);
-	color: var(--fg);
-	padding: 12px 20px;
-	border-radius: var(--radius-md);
-	box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
-	font-size: 14px;
-	z-index: 10000;
-	opacity: 0;
-	transform: translateY(20px);
-	transition: opacity 0.2s ease, transform 0.2s ease;
-	pointer-events: none;
-}
-
-.kb-toast.show {
-	opacity: 1;
-	transform: translateY(0);
-}
-
-@media (max-width: 480px) {
-	.kb-toast {
-		left: 16px;
-		right: 16px;
-		bottom: 16px;
-		text-align: center;
-	}
 }
