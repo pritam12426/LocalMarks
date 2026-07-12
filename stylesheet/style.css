@@ -1632,3 +1632,35 @@ body.sidebar-resizing .main-panel {
 	background: var(--accent-hover);
 	border-color: var(--accent-hover);
 }
+
+/* ── Keyboard Toast ── */
+.kb-toast {
+	position: fixed;
+	bottom: 24px;
+	right: 24px;
+	background: var(--surface);
+	color: var(--fg);
+	padding: 12px 20px;
+	border-radius: var(--radius-md);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
+	font-size: 14px;
+	z-index: 10000;
+	opacity: 0;
+	transform: translateY(20px);
+	transition: opacity 0.2s ease, transform 0.2s ease;
+	pointer-events: none;
+}
+
+.kb-toast.show {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+	.kb-toast {
+		left: 16px;
+		right: 16px;
+		bottom: 16px;
+		text-align: center;
+	}
+}

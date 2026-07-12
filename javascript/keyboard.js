@@ -283,8 +283,7 @@ function handleGlobalKeys(e)
 	case 'o':
 		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
 			e.preventDefault();
-			const url = state.cards[state.focusedCardIndex].href;
-			window.location.href = url;
+			state.cards[state.focusedCardIndex].click();
 		}
 		break;
 	case 'p':
@@ -300,7 +299,7 @@ function handleGlobalKeys(e)
 			if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
 				const url = state.cards[state.focusedCardIndex].href;
 				navigator.clipboard.writeText(url).then(() => {
-					// Visual feedback could be added here
+					showToast(`Copied: ${getDomain(url)}`);
 				});
 			}
 		}
@@ -425,4 +424,32 @@ function clearSearch()
 	state.searchEl.value = '';
 	state.clearEl.classList.remove('visible');
 	window.dispatchEvent(new CustomEvent('search-cleared'));
+}
+
+function getDomain(url) {
+	try {
+		return new URL(url).hostname.replace('www.', '');
+	} catch {
+		return url;
+	}
+}
+
+function showToast(message) {
+	// Remove existing toast if any
+	const existing = document.querySelector('.kb-toast');
+	if (existing) existing.remove();
+
+	const toast = document.createElement('div');
+	toast.className = 'kb-toast';
+	toast.textContent = message;
+	document.body.appendChild(toast);
+
+	// Force reflow for animation
+	toast.offsetHeight;
+	toast.classList.add('show');
+
+	setTimeout(() => {
+		toast.classList.remove('show');
+		setTimeout(() => toast.remove(), 200);
+	}, 1500);
 }
