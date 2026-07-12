@@ -136,7 +136,7 @@ function ensureHelpModal()
 	overlay.setAttribute('aria-modal', 'true');
 	overlay.setAttribute('aria-label', 'Keyboard shortcuts');
 
-	overlay.innerHTML = `
+overlay.innerHTML = `
 		<div class="modal-box">
 			<button class="modal-close" aria-label="Close">✕</button>
 			<div class="keyboard-help">
@@ -149,9 +149,13 @@ function ensureHelpModal()
 					<tr><td><kbd>gg</kbd></td><td>Jump to first bookmark</td></tr>
 					<tr><td><kbd>G</kbd> (<kbd>Shift+G</kbd>)</td><td>Jump to last bookmark</td></tr>
 					<tr><td><kbd>/</kbd></td><td>Focus search</td></tr>
-					<tr><td><kbd>Enter</kbd></td><td>Open focused bookmark</td></tr>
+					<tr><td><kbd>Enter</kbd></td><td>Open focused bookmark (new tab)</td></tr>
+					<tr><td><kbd>o</kbd></td><td>Open focused bookmark (same tab)</td></tr>
+					<tr><td><kbd>yy</kbd></td><td>Copy URL to clipboard</td></tr>
+					<tr><td><kbd>p</kbd></td><td>Pin/unpin bookmark</td></tr>
 					<tr><td><kbd>Esc</kbd></td><td>Clear search / close this window</td></tr>
 					<tr><td><kbd>?</kbd></td><td>Toggle this help window</td></tr>
+					<tr><td><kbd>Ctrl/Cmd+K</kbd></td><td>Focus search</td></tr>
 				</table>
 			</div>
 		</div>
@@ -275,6 +279,31 @@ function handleGlobalKeys(e)
 	case '?':
 		e.preventDefault();
 		showKeyboardHelp();
+		break;
+	case 'o':
+		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
+			e.preventDefault();
+			const url = state.cards[state.focusedCardIndex].href;
+			window.location.href = url;
+		}
+		break;
+	case 'p':
+		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
+			e.preventDefault();
+			const star = state.cards[state.focusedCardIndex].querySelector('.bm-star');
+			if (star) star.click();
+		}
+		break;
+	case 'y':
+		if (state.lastKey === 'y') {
+			e.preventDefault();
+			if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
+				const url = state.cards[state.focusedCardIndex].href;
+				navigator.clipboard.writeText(url).then(() => {
+					// Visual feedback could be added here
+				});
+			}
+		}
 		break;
 	case 'enter':
 		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
