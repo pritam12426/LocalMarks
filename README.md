@@ -449,9 +449,8 @@ LocalMarks/
 │   ├── tag_bar.js         # Tag filter pills + expand/collapse
 │   ├── search.js          # Search index + grouped results
 │   ├── keyboard.js        # Vim-style navigation + help modal
-│   ├── info.js            # Info view (stats, domain grid, tag cloud, category chart, health check)
-│   ├── random.js          # Random picker with category/tag filters
-│   └── health.js          # Link health checker (async HEAD requests)
+│   ├── info.js            # Info view (stats, domain grid, tag cloud, category chart)                           │
+│   └── random.js          # Random picker with category/tag filters
 ├── stylesheet/
 │   ├── style.css          # All visual styles (dark theme default)
 │   └── themes/
