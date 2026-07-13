@@ -31,10 +31,10 @@ async function getCached()
 		const            tx     = db.transaction(STORE_NAME, 'readonly');
 		const            store  = tx.objectStore(STORE_NAME);
 		const            result = await new Promise((res, rej) => {
-            const r     = store.get('bookmarks');
-            r.onsuccess = () => res(r.result || null);
-            r.onerror = () => rej(null);
-        });
+			const r     = store.get('bookmarks');
+			r.onsuccess = () => res(r.result || null);
+			r.onerror = () => rej(null);
+		});
 		db.close();
 		return result ? result.data : null;
 	} catch {
@@ -45,7 +45,7 @@ async function getCached()
 async function setCache(data)
 {
 	try {
-		const db               = await openDB();
+		const            db    = await openDB();
 		const            tx    = db.transaction(STORE_NAME, 'readwrite');
 		const            store = tx.objectStore(STORE_NAME);
 		store.put({id: 'bookmarks', data, timestamp: Date.now()});
@@ -56,12 +56,21 @@ async function setCache(data)
 
 export async function fetchBookmarks()
 {
-	const res = await fetch('bookmarks.json', {cache: 'no-cache'});
-	if (!res.ok)
-		throw new Error(`HTTP ${res.status}`);
-	const data = await res.json();
-	setCache(data);
-	return data;
+	try {
+		const res = await fetch('bookmarks.json', {cache: 'no-cache'});
+		if (!res.ok)
+			throw new Error(`HTTP ${res.status}`);
+		const data = await res.json();
+		setCache(data);
+		return data;
+	} catch (err) {
+		const cached = await getCached();
+		if (cached) {
+			console.warn('⚠️ Network fetch failed, using cached bookmarks:', err.message);
+			return cached;
+		}
+		throw err;
+	}
 }
 
 // ── HTML escape ────────────────────────────

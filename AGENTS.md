@@ -33,7 +33,7 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 | `javascript/browse.js`    | Browse view **orchestrator** — wires together submodules                                 |
 | `javascript/sidebar.js`   | Category sidebar rendering & events                                                      |
 | `javascript/panel.js`     | Main panel rendering (categories, favorites, cards)                                      |
-| `javascript/tag-bar.js`   | Tag filter bar rendering & interaction                                                   |
+| `javascript/tag_bar.js`   | Tag filter bar rendering & interaction                                                   |
 | `javascript/search.js`    | Search index building & results rendering                                                |
 | `javascript/keyboard.js`  | Vim-style keyboard navigation & help modal                                               |
 | `javascript/info.js`      | Info view (stats, domain grid, tag cloud, category chart, health check)                  |
@@ -81,7 +81,7 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 - Random view "Open All" opens bookmarks with 150ms staggered delays.
 - Vim-style keyboard navigation in browse view: `j`/`k` next/prev card, `h`/`←` back to sidebar, `l`/`→` into cards, `gg`/`G` first/last, `/` focus search, `?` help modal.
 - **New keyboard shortcuts**: `o` open in same tab, `yy` copy URL to clipboard, `p` pin/unpin bookmark (visual star, sorts to top).
-- **Modular browse view**: `browse.js` (orchestrator) + `sidebar.js` + `panel.js` + `tag-bar.js` + `search.js` + `keyboard.js`. Cross-module communication via `CustomEvent` on `window` (e.g., `sidebar-fav-click`, `tag-filter-change`, `search-query-changed`, `cards-rendered`).
+- **Modular browse view**: `browse.js` (orchestrator) + `sidebar.js` + `panel.js` + `tag_bar.js` + `search.js` + `keyboard.js`. Cross-module communication via `CustomEvent` on `window` (e.g., `sidebar-fav-click`, `tag-filter-change`, `search-query-changed`, `cards-rendered`).
 - **Link health check** (Info view): `🔍 Check All Links` button runs async HEAD requests with progress bar, shows results table (OK/redirect/4xx/5xx/error). Cancellable, configurable concurrency. Powered by `javascript/health.js`.
 - **Service worker** (`sw.js`): caches `bookmarks.json`, `index.html`, all JS/CSS/assets for offline use. Cache-first for static, network-first for `bookmarks.json`. Auto-updates in background.
 

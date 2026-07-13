@@ -63,8 +63,8 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 | ------------------------ | --------- | ---------------------------- | ------------------------------- |
 | `sidebar-fav-click`      | —         | `sidebar.js`                 | `browse.js`                     |
 | `sidebar-category-click` | `{index}` | `sidebar.js`                 | `browse.js`                     |
-| `tag-filter-change`      | —         | `tag-bar.js`, `panel.js`     | `browse.js`                     |
-| `tag-bar-toggle`         | —         | `tag-bar.js`                 | `browse.js`                     |
+| `tag-filter-change`      | —         | `tag_bar.js`, `panel.js`     | `browse.js`                     |
+| `tag-bar-toggle`         | —         | `tag_bar.js`                 | `browse.js`                     |
 | `search-query-changed`   | `{query}` | `keyboard.js`                | `browse.js`                     |
 | `search-query-empty`     | —         | `keyboard.js`                | `browse.js`                     |
 | `search-cleared`         | —         | `search.js`, `keyboard.js`   | `browse.js`                     |
@@ -132,7 +132,7 @@ python3 -m http.server 8085
 - `browse.js`: `allCategories`, `activeCategory`, `searchQuery`, `activeTags`
 - `sidebar.js`: renders category list, emits click events
 - `panel.js`: renders cards/favorites, consumes `activeTags`
-- `tag-bar.js`: owns `activeTags` Set + `expanded` boolean
+- `tag_bar.js`: owns `activeTags` Set + `expanded` boolean
 - `search.js`: owns search index, renders grouped results
 - `keyboard.js`: owns focused card index, card list, help modal
 - `data.js`: all utilities, IndexedDB, localStorage keys
@@ -188,7 +188,7 @@ title | url | description | #tag1 #tag2
 | New MIME type               | N/A (viewer uses Google favicon service)                                                   |
 | New theme                   | `stylesheet/themes/new.css` + `<link media="(prefers-color-scheme: ...)">` in `index.html` |
 | New keyboard shortcut       | `keyboard.js` (`handleGlobalKeys`)                                                         |
-| New tag bar behavior        | `tag-bar.js`                                                                               |
+| New tag bar behavior        | `tag_bar.js`                                                                               |
 | New search behavior         | `search.js`                                                                                |
 | New card layout             | `data.js` (`buildCard`) + `style.css`                                                      |
 | New info panel section      | `info.js`                                                                                  |

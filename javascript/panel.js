@@ -6,7 +6,7 @@
 
 import {buildCard} from './data.js';
 import {getFavorites} from './data.js';
-import {renderTagBar, getActiveTags, setActiveTags} from './tag-bar.js';
+import {renderTagBar, getActiveTags, setActiveTags} from './tag_bar.js';
 
 const state = {
 	categories: [],

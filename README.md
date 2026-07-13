@@ -1,6 +1,7 @@
 <h1 align="center">
 	<br>
-	<img src="assets/README_icon.png" width="200">
+	<!--<img src="assets/README_icon.png" width="200">-->
+	<img src="favicon.ico" width="200">
 	<br>
 	📚 LocalMarks
 	<br>
@@ -55,7 +56,7 @@ LocalMarks/
 │   ├── browse.js          # Browse view orchestrator (wires submodules)
 │   ├── sidebar.js         # Category sidebar rendering & events
 │   ├── panel.js           # Main panel (categories, favorites, cards, tag filtering)
-│   ├── tag-bar.js         # Tag filter pills + expand/collapse
+│   ├── tag_bar.js         # Tag filter pills + expand/collapse
 │   ├── search.js          # Search index + grouped results
 │   ├── keyboard.js        # Vim-style navigation + help modal
 │   ├── info.js            # Info view (stats, domain grid, tag cloud, category chart, health check)
@@ -277,6 +278,8 @@ Then open **http://localhost:8085**
 
 ### Bookmark browser (`#browse`)
 
+<img src="./assets/home_page.png" alt="LocalMarks home page" width="100%">
+
 - Sidebar with all categories and bookmark counts
 - **Favorites** virtual category (★) appears at top when any bookmark is starred
 - Full-text search across title, description, tags, and URL — press `/` to focus
@@ -371,7 +374,7 @@ Place your `bookmarks.json` next to `index.html` and the viewer picks it up auto
 | `javascript/browse.js`        | Browse view **orchestrator** — wires submodules, handles events                                 |
 | `javascript/sidebar.js`       | Category sidebar rendering & click/keyboard events                                               |
 | `javascript/panel.js`         | Main panel rendering (categories, favorites, cards, tag filtering)                               |
-| `javascript/tag-bar.js`       | Tag filter pills, expand/collapse, active tags state                                             |
+| `javascript/tag_bar.js`       | Tag filter pills, expand/collapse, active tags state                                             |
 | `javascript/search.js`        | Search index building, grouped results rendering                                                 |
 | `javascript/keyboard.js`      | Vim-style navigation, help modal, search input handling                                          |
 | `javascript/info.js`          | Info view (stats, domain grid, tag cloud, category chart, health check)                          |

@@ -62,7 +62,7 @@
 │  │    ├─ #browse → renderBrowse()  → browse.js orchestrates:         │    │
 │  │    │     ├─ sidebar.js   (categories + favorites)                   │    │
 │  │    │     ├─ panel.js     (bookmark cards, tag filtering)            │    │
-│  │    │     ├─ tag-bar.js   (filter pills, expand/collapse)            │    │
+│  │    │     ├─ tag_bar.js   (filter pills, expand/collapse)            │    │
 │  │    │     ├─ search.js    (index, results, groups by category)       │    │
 │  │    │     └─ keyboard.js  (vim nav, help modal, search input)        │    │
 │  │    ├─ #info   → info.js (stats, domain grid, tag cloud, cat chart  │    │
@@ -115,7 +115,7 @@ LocalMarks/
 │   ├── browse.js                 # Browse orchestrator + event wiring
 │   ├── sidebar.js                # Category sidebar rendering
 │   ├── panel.js                  # Main panel (cards, favorites, tag filtering)
-│   ├── tag-bar.js                # Tag filter pills + expand/collapse
+│   ├── tag_bar.js                # Tag filter pills + expand/collapse
 │   ├── search.js                 # Search index + grouped results
 │   ├── keyboard.js               # Vim nav + help modal + search input + shortcuts
 │   ├── info.js                   # Database stats view + health check
@@ -280,7 +280,7 @@ initKeyboard({bookmarkListEl, catListEl, searchEl, clearEl})
 - **Category view**: deduped bookmarks, filtered by `activeTags` (AND logic)
 - **Favorites view**: deduped favorites across all categories, filtered by `activeTags`
 
-**Tag bar**: Delegates to `tag-bar.js` via `renderTagBar(allTags)`.
+**Tag bar**: Delegates to `tag_bar.js` via `renderTagBar(allTags)`.
 
 **Card clicks on tags**: Adds tag to `activeTags`, emits `tag-filter-change`.
 
@@ -290,7 +290,7 @@ initKeyboard({bookmarkListEl, catListEl, searchEl, clearEl})
 
 ---
 
-### 4.8 `tag-bar.js` — Tag Filter Pills
+### 4.8 `tag_bar.js` — Tag Filter Pills
 
 **Renders**: Up to 30 pills initially, expand button if more, "Clear filters" if any active.
 
@@ -509,8 +509,8 @@ Overrides root custom properties for light mode. Activated by browser via media 
 | `favorites-changed`      | —                 | `data.js:toggleFavorite()` | `browse.js`                     |
 | `sidebar-fav-click`      | —                 | `sidebar.js`               | `browse.js`                     |
 | `sidebar-category-click` | `{index}`         | `sidebar.js`               | `browse.js`                     |
-| `tag-filter-change`      | —                 | `tag-bar.js`, `panel.js`   | `browse.js`                     |
-| `tag-bar-toggle`         | —                 | `tag-bar.js`               | `browse.js`                     |
+| `tag-filter-change`      | —                 | `tag_bar.js`, `panel.js`   | `browse.js`                     |
+| `tag-bar-toggle`         | —                 | `tag_bar.js`               | `browse.js`                     |
 | `search-query-changed`   | `{query}`         | `keyboard.js`              | `browse.js`                     |
 | `search-query-empty`     | —                 | `keyboard.js`              | `browse.js`                     |
 | `search-cleared`         | —                 | `search.js`, `keyboard.js` | `browse.js`                     |
@@ -535,7 +535,7 @@ Overrides root custom properties for light mode. Activated by browser via media 
    - sidebar.js emits sidebar-category-click
    - browse.js: activeCategory = index, clear tags, renderPanel()
 8. User clicks tag pill:
-   - tag-bar.js: activeTags.add(tag), emits tag-filter-change
+   - tag_bar.js: activeTags.add(tag), emits tag-filter-change
    - browse.js: renderPanel() → filtered cards
 9. User types in search:
    - keyboard.js: debounced → emits search-query-changed
@@ -606,7 +606,7 @@ Overrides root custom properties for light mode. Activated by browser via media 
 | Modify `marks2json` input format  | `marks2json.py:parse_bookmark_line()`                                   |
 | Add field to bookmark schema      | `marks2json.py` + `data.js:buildCard()` + all renderers                 |
 | Adjust sidebar width bounds       | `main.js:initSidebarResizer()` (MIN_W/MAX_W)                            |
-| Change tag bar collapse threshold | `tag-bar.js:INITIAL_COUNT` (30)                                         |
+| Change tag bar collapse threshold | `tag_bar.js:INITIAL_COUNT` (30)                                         |
 | Change tag cloud threshold        | `info.js:INITIAL_COUNT` (35)                                            |
 
 ---

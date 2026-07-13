@@ -13,7 +13,7 @@ const STATIC_ASSETS = [
 	'/javascript/browse.js',
 	'/javascript/sidebar.js',
 	'/javascript/panel.js',
-	'/javascript/tag-bar.js',
+	'/javascript/tag_bar.js',
 	'/javascript/search.js',
 	'/javascript/keyboard.js',
 	'/javascript/info.js',

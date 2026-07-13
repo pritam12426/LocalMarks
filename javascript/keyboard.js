@@ -136,7 +136,7 @@ function ensureHelpModal()
 	overlay.setAttribute('aria-modal', 'true');
 	overlay.setAttribute('aria-label', 'Keyboard shortcuts');
 
-overlay.innerHTML = `
+	overlay.innerHTML = `
 		<div class="modal-box">
 			<button class="modal-close" aria-label="Close">✕</button>
 			<div class="keyboard-help">
@@ -239,9 +239,9 @@ function handleGlobalKeys(e)
 		return;
 
 	if (inField) {
-		if (e.key === 'Escape' && e.target === state.searchEl) {
-			clearSearch();
-		}
+		// Escape-while-search-focused is handled by browse.js's own listener
+		// (onClearSearch does the full reset: tags, sidebar, panel). Don't
+		// also clear it here, or both fire and renderPanel() runs twice.
 		return;
 	}
 
@@ -283,14 +283,15 @@ function handleGlobalKeys(e)
 	case 'o':
 		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
 			e.preventDefault();
-			state.cards[state.focusedCardIndex].click();
+			window.open(state.cards[state.focusedCardIndex].href, '_blank', 'noopener,noreferrer');
 		}
 		break;
 	case 'p':
 		if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
 			e.preventDefault();
 			const star = state.cards[state.focusedCardIndex].querySelector('.bm-star');
-			if (star) star.click();
+			if (star)
+				star.click();
 		}
 		break;
 	case 'y':
@@ -298,9 +299,8 @@ function handleGlobalKeys(e)
 			e.preventDefault();
 			if (state.focusedCardIndex >= 0 && state.cards[state.focusedCardIndex]) {
 				const url = state.cards[state.focusedCardIndex].href;
-				navigator.clipboard.writeText(url).then(() => {
-					showToast(`Copied: ${getDomain(url)}`);
-				});
+				navigator.clipboard.writeText(url).then(
+				    () => { showToast(`Copied: ${getDomain(url)}`); });
 			}
 		}
 		break;
@@ -426,7 +426,8 @@ function clearSearch()
 	window.dispatchEvent(new CustomEvent('search-cleared'));
 }
 
-function getDomain(url) {
+function getDomain(url)
+{
 	try {
 		return new URL(url).hostname.replace('www.', '');
 	} catch {
@@ -434,13 +435,15 @@ function getDomain(url) {
 	}
 }
 
-function showToast(message) {
+function showToast(message)
+{
 	// Remove existing toast if any
 	const existing = document.querySelector('.kb-toast');
-	if (existing) existing.remove();
+	if (existing)
+		existing.remove();
 
-	const toast = document.createElement('div');
-	toast.className = 'kb-toast';
+	const toast       = document.createElement('div');
+	toast.className   = 'kb-toast';
 	toast.textContent = message;
 	document.body.appendChild(toast);
 

@@ -106,27 +106,3 @@ function getFavoritesCount()
 	}
 	return count;
 }
-
-export function handleSidebarKeys(e)
-{
-	if (e.key !== 'j' && e.key !== 'k' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp')
-		return;
-
-	const items = Array.from(state.catListEl.querySelectorAll('li'));
-	if (!items.length)
-		return;
-
-	const current = items.indexOf(document.activeElement);
-	const step    = (e.key === 'j' || e.key === 'ArrowDown') ? 1 : -1;
-	const next    = current + step;
-
-	if (next < 0 || next >= items.length)
-		return;
-
-	e.preventDefault();
-	e.stopPropagation();
-
-	items[next].focus();
-	items[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
-	items[next].click();
-}

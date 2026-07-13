@@ -48,8 +48,8 @@ async function init()
 	// Register service worker for offline support
 	if ('serviceWorker' in navigator) {
 		navigator.serviceWorker.register('/sw.js')
-			.then(reg => console.log('✅ Service Worker registered:', reg.scope))
-			.catch(err => console.warn('⚠️ Service Worker registration failed:', err));
+		    .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+		    .catch(err => console.warn('⚠️ Service Worker registration failed:', err));
 	}
 
 	window.addEventListener('hashchange', renderRoute);
@@ -176,7 +176,6 @@ function renderRoute()
 	const qs      = qIdx === -1 ? '' : hash.slice(qIdx + 1);
 	const qParams = new URLSearchParams(qs);
 
-	const prevRoute = document.body.className.replace('route-', '');
 	document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 	document.body.className = `route-${route}`;
 

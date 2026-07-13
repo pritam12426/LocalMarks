@@ -21,7 +21,7 @@ import {
 } from './panel.js';
 
 import {initSearch, renderSearch, clearSearch as searchClear} from './search.js';
-import {initTagBar, getActiveTags, setActiveTags, renderTagBar} from './tag-bar.js';
+import {initTagBar, getActiveTags, setActiveTags} from './tag_bar.js';
 import {initKeyboard, refreshCards, focusFirstCard} from './keyboard.js';
 import {getFavorites, buildCard} from './data.js';
 
@@ -151,13 +151,7 @@ function bindEvents()
 	// Tag filter changes
 	window.addEventListener('tag-filter-change', () => { renderPanel(); });
 
-	window.addEventListener('tag-bar-toggle', () => {
-		const cat = allCategories[activeCategory];
-		if (cat) {
-			const allTags = [...new Set((cat.bookmarks || []).flatMap(bm => bm.tags || []))].sort();
-			renderTagBar(allTags);
-		}
-	});
+	window.addEventListener('tag-bar-toggle', () => { renderPanel(); });
 
 	// Search events from keyboard.js
 	window.addEventListener('search-query-changed', e => {
