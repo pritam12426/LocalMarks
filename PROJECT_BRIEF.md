@@ -102,9 +102,11 @@ LocalMarks/
 ├── LICENSE                       # MIT
 ├── favicon.ico                   # App icon
 ├── assets/                       # Screenshots for README
+│   ├── README_icon.png
+│   ├── favicon.ico
 │   ├── home_page.png
 │   ├── info_page.png
-│   └── README_icon.png
+│   └── random_page.png
 ├── stylesheet/
 │   ├── style.css                 # All styles (dark theme default)
 │   └── themes/
@@ -118,10 +120,9 @@ LocalMarks/
 │   ├── tag_bar.js                # Tag filter pills + expand/collapse
 │   ├── search.js                 # Search index + grouped results
 │   ├── keyboard.js               # Vim nav + help modal + search input + shortcuts
-│   ├── info.js                   # Database stats view + health check
-│   ├── random.js                 # Random picker view
-│   └── health.js                 # Link health checker (async HEAD, progress, results)
-└── .gitignore                    # *.svg, *.json, assets/favicon/*, __pycache__
+│   ├── info.js                   # Database stats view
+│   └── random.js                 # Random picker view
+└── .gitignore
 ```
 
 **No subdirectories in `javascript/`** — flat module structure. All imports are relative (`./module.js`).
@@ -132,7 +133,7 @@ LocalMarks/
 
 ### 4.1 `marks2json.py` — Converter CLI
 
-**Subcommands**: `create` (fresh DB), `update` (merge, dedup by URL).
+**Subcommands**: `create` (fresh DB), `update` (merge, dedup by URL), `find-dead` (check link health via HEAD requests).
 
 ```python
 # Core flow (create):
@@ -154,6 +155,8 @@ json.dumps(final_data, indent="\t", ensure_ascii=False)
 **Update logic**: Loads existing DB, indexes by URL. New entries only if URL not in DB. `--override` refreshes title/desc/tags/icon for existing URLs if incoming line differs.
 
 **Icon re-fetch skip**: During `update`, if URL exists AND title/desc/tags identical → reuse existing icon (no network call).
+
+**find-dead logic**: Checks all unique URLs in DB via HEAD requests (concurrent, configurable). Prints health summary to stdout. With `--healthy FILE`, writes new DB containing only healthy links (excludes `--status` categories). Default dead statuses: `4xx,5xx,error`. Options: `--concurrency` (default 5), `--timeout` (default 10s).
 
 **Input format**: `title | url | description | #tag1 #tag2`
 
@@ -355,7 +358,7 @@ searchIndex = categories.flatMap(cat =>
 
 ---
 
-### 4.11 `info.js` — Database Stats View + Link Health Check
+### 4.11 `info.js` — Database Stats View
 
 **Renders**:
 
@@ -363,56 +366,12 @@ searchIndex = categories.flatMap(cat =>
 - Category bar chart (horizontal, % of max)
 - Tag cloud (from `book_mark_tag_hash`, top 35 + expand)
 - Domain grid (from `book_mark_domain_hash`, clickable → `#browse?q=domain`)
-- **Link Health Check**: "🔍 Check All Links" button runs async HEAD requests with progress bar; results table shows OK (2xx), Redirect (3xx), Client Error (4xx), Server Error (5xx), Network Error. Cancellable, configurable concurrency (default 5).
-
-**Health check powered by**: `health.js` (async workers, AbortController for cancellation, progress callbacks).
 
 **All from**: `data.book_Marks`, `data.book_mark_domain_hash`, `data.book_mark_tag_hash`.
 
 ---
 
 ### 4.12 `random.js` — Random Picker
-
-**State**: `allBookmarks[]` (flattened with `_category`), `lastPicked[]`.
-
-**Controls**: Count input, category `<select>`, tag `<input list=datalist>`.
-
-**Algorithm**: Fisher-Yates shuffle on filtered pool (`catFilter`, `tagFilter`).
-
-**Open All**: `setTimeout(window.open, i * 150)` staggered delays.
-
----
-
-### 4.12 `random.js` — Random Picker
-
-**State**: `allBookmarks[]` (flattened with `_category`), `lastPicked[]`.
-
-**Controls**: Count input, category `<select>`, tag `<input list=datalist>`.
-
-**Algorithm**: Fisher-Yates shuffle on filtered pool (`catFilter`, `tagFilter`).
-
-**Open All**: `setTimeout(window.open, i * 150)` staggered delays.
-
----
-
-### 4.13 `health.js` — Link Health Checker
-
-**Exports**: `checkAllBookmarks(categories, {concurrency, progress, complete})`, `cancelCheck()`.
-
-**Algorithm**:
-1. Flattens categories → unique URLs
-2. Creates worker pool (default 5 concurrent)
-3. Each worker: HEAD request → fallback GET (no-cors) → classify status
-4. Progress callback: `(url, checked, total)`
-5. Complete callback: `results[]` with `{url, category, status, error}`
-
-**Categories**: `ok` (2xx), `redirect` (3xx), `client-error` (4xx), `server-error` (5xx), `error` (network), `cancelled`.
-
-**Cancellation**: `AbortController` aborts all in-flight requests.
-
----
-
-### 4.14 `sw.js` — Service Worker (Offline Support)
 
 **Caches**: `localmarks-v1` with static assets (HTML, CSS, JS, favicon, bookmarks.json).
 
@@ -622,7 +581,6 @@ Overrides root custom properties for light mode. Activated by browser via media 
 - [ ] `marks2json.py` = offline converter, stdlib-only (+`requests` for icons)
 - [ ] Source = `.txt` files (pipe-separated, category = filename)
 - [ ] No build, no deps, no config files
-- [ ] **Link health check** (`health.js`) = async HEAD workers + progress + results table
 - [ ] **Service worker** (`sw.js`) = offline cache (cache-first static, network-first bookmarks.json)
 
 ---
@@ -646,7 +604,9 @@ python3 marks2json.py create *.txt -T bookmarks.json --icon
 # Override existing URLs on update
 python3 marks2json.py update new.txt -T bookmarks.json --override
 
-# Health check: open #info view and click "Check All Links"
+# Check link health (CLI only)
+python3 marks2json.py find-dead -T bookmarks.json
+
 # Service worker: auto-registers on load (sw.js)
 
 # Clear IndexedDB cache (in DevTools Console)

@@ -144,7 +144,7 @@ python3 -m http.server 8085
 - `localmarks-sidebar-w` — `number` (px)
 - `localmarks-theme` — `'dark' \| 'light'`
 
-**IndexedDB:** `LocalMarksCache` / `bookmarks` / key `'bookmarks'` — `{data, timestamp}`
+**IndexedDB:** `LocalMarksCache` / `bookmarks` store, key `'bookmarks'` — `{data, timestamp}`
 
 ### 8. Converter Details (`marks2json.py`)
 
@@ -178,6 +178,7 @@ title | url | description | #tag1 #tag2
 
 - `create`: fresh DB, sort by title then category
 - `update`: merge by URL (dedup), `--override` refreshes title/desc/tags/icon
+- `find-dead`: checks all URLs via HEAD requests, prints summary, `--healthy FILE` writes filtered DB
 - Icon re-fetch skipped if title/desc/tags unchanged
 
 ### 9. File Locations for Common Tasks
